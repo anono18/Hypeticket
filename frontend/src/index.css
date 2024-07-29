@@ -26,7 +26,17 @@
   }
   
 }
+
+
 @layer utilities {
+
+  .large-container {
+    @apply bg-white rounded-lg mx-6 lg:mx-14;
+    max-width: 100%;
+    padding: 20px;
+    opacity: 30;
+}
+
 
   .btn-white  { 
     @apply  medium-15 bg-white px-7 py-3 text-tertiary
