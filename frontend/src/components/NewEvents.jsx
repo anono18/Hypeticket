@@ -1,34 +1,52 @@
 import React, { useState, useEffect } from 'react';
-import Item from './Item'
+import Item from './Item';
+import axios from 'axios';
 
 const NewEvents = () => {
-    const [new_collection, setnew_collection] = useState([])
-  useEffect(()=>{
-    fetch('http://localhost:4000/newcollection').then((Response)=>Response.json()).then((data)=> setnew_collection(data));
-  },[])
+    const [new_collection, setNewCollection] = useState([]);
+
+    useEffect(() => {
+        const fetchNewEvents = async () => {
+            try {
+                const response = await axios.get('http://localhost:4000/newcollection');
+                // Prendre les 4 premiers événements pour afficher uniquement les nouveaux
+                setNewCollection(response.data.slice(0, 4));
+            } catch (error) {
+                console.error('Erreur lors de la récupération des événements:', error);
+            }
+        };
+        fetchNewEvents();
+    }, []);
 
     return (
-        <section className='bg-blue-950'>
+        <section className='bg-blue-900 py-16 bg-with-image'>
+            <div className='text-center mb-12'>
+                <span className='text-3xl font-bold text-white py-2 px-4 rounded-xl shadow-xl'>
+                    Les événements à venir
+                </span>
+            </div>
             {/* le container */}
-            <div className='large-container'>
-                {/* comment va s'afficher les evenements */}
-                <div className='grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 gap-y-28 mt-32 shadow-2xl rounded-xl'>
+            <div className='large-container bg-white bg-opacity-100 rounded-xl p-5'>
+                {/* comment va s'afficher les événements */}
+                <div className='grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-8 mt-24 mb-48'>
                     {new_collection.map((item) => (
-                        <Item
-                            key={item.id}
-                            id={item.id}
-                            name={item.name}
-                            image={item.image}
-                            ticket_Price={item.ticket_Price}
-                            category={item.category}
-                            date_event={item.date_event}
-                            lieu={item.lieu}
-                            timeEvent={item.timeEvent}
-                        />))}
+                        <div key={item.id} className='bg-white p-4 rounded-xl shadow-2xl'>
+                            <Item
+                                id={item.id}
+                                name={item.name}
+                                image={item.image}
+                                ticket_Price={item.ticket_Price}
+                                category={item.category}
+                                date_event={item.date_event}
+                                lieu={item.lieu}
+                                timeEvent={item.timeEvent}
+                            />
+                        </div>
+                    ))}
                 </div>
             </div>
         </section>
-    )
-}
+    );
+};
 
-export default NewEvents
+export default NewEvents;

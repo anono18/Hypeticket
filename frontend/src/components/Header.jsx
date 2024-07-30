@@ -26,7 +26,7 @@ const Header = () => {
     }, [menuOpened]);
 
     return (
-        <header className="max-padd-container w-full z-50">
+        <header className="max-padd-container w-full z-50 bg-blue-950">
             <div className="flexBetween py-3">
                 <Link to="/" className="flex items-center gap-x-2">
                     <span className="bold-24 hidden xs:flex "><span className="text-secondary text-2xl">HYPE</span>-<span className="text-secondary text-2xl">TICKETS</span></span>
@@ -34,7 +34,7 @@ const Header = () => {
                 {/** Navbar et bouton */}
                 <div className="flexCenter gap-x-4 ">
                     <div>
-                        <Navbar containerStyles="hidden xl:flex gap-x-5 xl:gap-x-10 medium-15 rounded-full px-2 py-1" />
+                        <Navbar containerStyles="hidden xl:flex gap-x-5 xl:gap-x-10 medium-15 rounded-full px-2 py-1 text-white" />
                     </div>
                     <div>
                         <Navbar containerStyles={`${menuOpened ? "flex items-start flex-col gap-y-12 fixed top-20 right-8 p-12 bg-white rounded-3xl shadow-md w-64 medium-16 ring-1 ring-slate-900/5 transition-all duration-300 z-50" : "flex items-start flex-col gap-y-12 fixed top-20 p-12 bg-white rounded-3xl shadow-md w-64 medium-16 ring-1 ring-slate-900/5 transition-all duration-300 z-50 -right-[100%]"}`} />

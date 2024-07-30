@@ -1,6 +1,5 @@
-import Navbar from "./componenets/Navbar"
+import Navbar from "./components/Navbar"
 import Admin from "./pages/Admin"
-import Sidebar from "./componenets/Sidebar"
 
 export default function App() {
   return (

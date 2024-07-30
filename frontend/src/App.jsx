@@ -3,6 +3,7 @@ import Home from './pages/home';
 import Events from './pages/Events';
 import ListTicket from './pages/listTicket';
 import Contact from './pages/Contact'
+import Login from './pages/Login';
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
         <Route path="/events" element={<Events />} />
         <Route path="/listTicket" element={<ListTicket />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/login" element={<Login />} />
       </Routes>
     </BrowserRouter>
   );

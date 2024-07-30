@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+.bg-with-image {
+  background-image: url('C:/Users/adodo/Downloads/stage/HYPE ticket/frontend/src/assets');
+  background-size: cover; /* Ajuste l'image pour couvrir l'élément */
+  background-position: left; /* Centre l'image */
+  background-repeat: repeat; /* Évite la répétition de l'image */
+}
+
 
 @layer base {
   
@@ -34,7 +41,7 @@
     @apply bg-white rounded-lg mx-6 lg:mx-14;
     max-width: 100%;
     padding: 20px;
-    opacity: 30;
+    opacity: 100;
 }
 
 
