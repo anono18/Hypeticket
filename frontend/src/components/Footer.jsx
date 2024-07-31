@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom'
 
 export const Footer = () => {
   return (
-    <footer className='max-padd-container bg-tertiary py-8'>
+    <footer className='max-padd-container bg-slate-900 py-8'>
       <div className='flexCenter flex-col gap-y-4'>
         {/**logo */}
         <Link to="/" className="flex items-center gap-x-2">
@@ -20,7 +20,7 @@ export const Footer = () => {
         </div>
         {/* <SocialIcons/> */}
         <hr className='h6[1px] w-2/3 my-3' />
-        <div className='text-white'>Copyright &copy; Marchanza made by <span className='rainbow-text'>A-A </span>| All right reserved </div>
+        <div className='text-white'>Copyright &copy; HYPE-TICKET made by <span className='rainbow-text'>A-A </span>| All right reserved </div>
       </div>
     </footer>
   )

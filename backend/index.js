@@ -39,19 +39,58 @@ app.post("/upload", upload.single('product'), (req, res) => {
 
 // Schema for creating new events
 const Event = mongoose.model("events", {
-    id: { type: Number, required: true },
-    name: { type: String, required: true },
-    image: { type: String, required: true },
-    category: { type: String, required: true },
-    description: { type: String, required: true },
-    ticket_Price: { type: Number, required: true },
-    supportContact: { type: Number, required: false },
-    date_event: { type: Date, required: true },
-    ticket_Availability: { type: Number, required: true },
-    lieu: { type: String, required: true },
-    organizer: { type: String, required: false },
-    timeEvent: { type: String, required: true },
-    eventWebsite: { type: String, required: false }
+    id: { 
+        type: Number, 
+        required: true 
+    },
+    name: { 
+        type: String, 
+        required: true 
+    },
+    image: { 
+        type: String, 
+        required: true 
+    },
+    category: { 
+        type: String, 
+        required: true 
+    },
+    description: { 
+        type: String, 
+        required: true 
+    },
+    ticket_Price: { 
+        type: Number, 
+        required: true 
+    },
+    supportContact: { 
+        type: Number, 
+        required: false 
+    },
+    date_event: { 
+        type: Date, 
+        required: true 
+    },
+    ticket_Availability: { 
+        type: Number, 
+        required: true 
+    },
+    lieu: { 
+        type: String, 
+        required: true 
+    },
+    organizer: { 
+        type: String, 
+        required: false 
+    },
+    timeEvent: { 
+        type: String, 
+        required: true 
+    },
+    eventWebsite: { 
+        type: String, 
+        required: false 
+    }
 });
 
 // Add an event
@@ -250,6 +289,21 @@ app.post('/send-email', async (req, res) => {
         }
         res.status(200).send('Email sent: ' + info.response);
     });
+});
+
+
+// endpoint pour la recherche 
+app.post('/searchevents', async (req, res) => {
+    let { searchTerm } = req.body;
+    let events = await Event.find({
+        $or: [
+            { name: { $regex: searchTerm, $options: 'i' } },
+            { organizer: { $regex: searchTerm, $options: 'i' } },
+            {lieu: {$regex: searchTerm, $options: 'i'}},
+            {category:{$regex: searchTerm, $options:'i'}}
+        ]
+    });
+    res.json(events);
 });
 
 

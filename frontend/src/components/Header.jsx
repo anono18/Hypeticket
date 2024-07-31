@@ -42,9 +42,9 @@ const Header = () => {
                     {/** Navbar et bouton */}
                     <div className="flexBetween gap-x-3 se:gap-x-2 bold-16">
                         {!menuOpened ? (
-                            <MdMenu className='xl:hidden cursor-pointer text-3xl hover:text-secondary' onClick={toggleMenu} />
+                            <MdMenu className='xl:hidden cursor-pointer text-3xl text-white hover:text-secondary' onClick={toggleMenu} />
                         ) : (
-                            <MdClose className='xl:hidden cursor-pointer text-3xl hover:text-secondary' onClick={toggleMenu} />
+                            <MdClose className='xl:hidden cursor-pointer text-3xl text-white hover:text-secondary' onClick={toggleMenu} />
                         )}
                         <div className="flexBetween sm:gap-x-0 ">
                             {localStorage.getItem('auth-token') ? 

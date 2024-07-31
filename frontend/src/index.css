@@ -4,15 +4,48 @@
 
 .bg-with-image {
   background-image: url('C:/Users/adodo/Downloads/stage/HYPE ticket/frontend/src/assets');
-  background-size: cover; /* Ajuste l'image pour couvrir l'élément */
-  background-position: left; /* Centre l'image */
-  background-repeat: repeat; /* Évite la répétition de l'image */
+  background-size: cover;
+  /* Ajuste l'image pour couvrir l'élément */
+  background-position: left;
+  /* Centre l'image */
+  background-repeat: repeat;
+  /* Évite la répétition de l'image */
 }
 
 
+
+
+.trapeze {
+  width: 200px;
+  height: 100px;
+  /* background-color:black; */
+  position: relative;
+  clip-path: polygon(0% 0%, 100% 0%, 90% 100%, 10% 100%);
+}
+
+.trapeze::before {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  right: -5px;
+  bottom: -5px;
+  border: 5px solid white;
+  clip-path: polygon(0% 0%, 100% 0%, 90% 100%, 10% 100%);
+  z-index: -1;
+}
+
+
+
+
+
+
+
+
+
 @layer base {
-  
-  .active-link{
+
+  .active-link {
     @apply text-secondary relative flex-1 after:w-full after:h-[1px] after:bg-secondary after:absolute after:-bottom-1 after:right-0;
   }
 
@@ -31,7 +64,7 @@
   p {
     @apply leading-[1.3] text-[14px] text-gray-30;
   }
-  
+
 }
 
 
@@ -42,27 +75,27 @@
     max-width: 100%;
     padding: 20px;
     opacity: 100;
-}
-
-
-  .btn-white  { 
-    @apply  medium-15 bg-white px-7 py-3 text-tertiary
   }
 
-  .btn-light  { 
-    @apply  medium-15 bg-primary px-7 py-3 text-tertiary
+
+  .btn-white {
+    @apply medium-15 bg-white px-7 py-3 text-tertiary
   }
 
-  .btn-dark { 
-    @apply  ring-1 ring-tertiary medium-15 bg-tertiary px-7 py-[10px] text-white transition-all hover:bg-tertiary/90
+  .btn-light {
+    @apply medium-15 bg-primary px-7 py-3 text-tertiary
   }
 
-  .btn-dark-outline { 
-    @apply  ring-1 ring-tertiary medium-15 bg-transparent px-7 py-[10px] text-tertiary transition-all hover:bg-tertiary hover:text-white
+  .btn-dark {
+    @apply ring-1 ring-tertiary medium-15 bg-tertiary px-7 py-[10px] text-white transition-all hover:bg-tertiary/90
   }
 
-  .btn-secondary  { 
-    @apply  ring-1 ring-secondary medium-15 bg-secondary px-7 py-[10px] text-white transition-all hover:bg-tertiary hover:ring-tertiary 
+  .btn-dark-outline {
+    @apply ring-1 ring-tertiary medium-15 bg-transparent px-7 py-[10px] text-tertiary transition-all hover:bg-tertiary hover:text-white
+  }
+
+  .btn-secondary {
+    @apply ring-1 ring-secondary medium-15 bg-secondary px-7 py-[10px] text-white transition-all hover:bg-tertiary hover:ring-tertiary
   }
 
   .max-container {

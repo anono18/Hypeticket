@@ -4,6 +4,7 @@ import Hero from '../components/Hero'
 import Footer from '../components/Footer'
 import NewEvents from '../components/NewEvents'
 import Utilities from '../components/Utilities'
+import Start from '../components/Start'
 
 
 const home = () => {
@@ -13,6 +14,7 @@ const home = () => {
       <Hero />
       <NewEvents />
       <Utilities/>
+      <Start />
       <Footer />
     </>
   )
