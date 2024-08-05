@@ -39,57 +39,57 @@ app.post("/upload", upload.single('product'), (req, res) => {
 
 // Schema for creating new events
 const Event = mongoose.model("events", {
-    id: { 
-        type: Number, 
-        required: true 
+    id: {
+        type: Number,
+        required: true
     },
-    name: { 
-        type: String, 
-        required: true 
+    name: {
+        type: String,
+        required: true
     },
-    image: { 
-        type: String, 
-        required: true 
+    image: {
+        type: String,
+        required: true
     },
-    category: { 
-        type: String, 
-        required: true 
+    category: {
+        type: String,
+        required: true
     },
-    description: { 
-        type: String, 
-        required: true 
+    description: {
+        type: String,
+        required: true
     },
-    ticket_Price: { 
-        type: Number, 
-        required: true 
+    ticket_Price: {
+        type: Number,
+        required: true
     },
-    supportContact: { 
-        type: Number, 
-        required: false 
+    supportContact: {
+        type: Number,
+        required: false
     },
-    date_event: { 
-        type: Date, 
-        required: true 
+    date_event: {
+        type: Date,
+        required: true
     },
-    ticket_Availability: { 
-        type: Number, 
-        required: true 
+    ticket_Availability: {
+        type: Number,
+        required: true
     },
-    lieu: { 
-        type: String, 
-        required: true 
+    lieu: {
+        type: String,
+        required: true
     },
-    organizer: { 
-        type: String, 
-        required: false 
+    organizer: {
+        type: String,
+        required: false
     },
-    timeEvent: { 
-        type: String, 
-        required: true 
+    timeEvent: {
+        type: String,
+        required: true
     },
-    eventWebsite: { 
-        type: String, 
-        required: false 
+    eventWebsite: {
+        type: String,
+        required: false
     }
 });
 
@@ -153,112 +153,76 @@ app.get('/newcollection', async (req, res) => {
 
 
 // Schéma pour les utilisateurs
-const User =mongoose.model('User',{
-    firstName: {
+const User = mongoose.model('User', {
+    firstname: {
         type: String,
-        required: true
+        required: false,
     },
-    lastName: {
+    name: {
         type: String,
-        required: true
     },
     email: {
         type: String,
-        required: true,
-        unique: true
+        unique: true,
     },
     password: {
         type: String,
-        required: true
+        required: true,
     },
     // Liste des tickets achetés (par défaut vide)
-    tickets: [
-        {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'Ticket' // Référence au modèle Ticket (à créer plus tard si nécessaire)
-        }
-    ]
+    // tickets: [
+    //     {
+    //         type: mongoose.Schema.Types.ObjectId,
+    //         ref: 'Ticket' // Référence au modèle Ticket (à créer plus tard si nécessaire)
+    //     }
+    // ]
 });
 
 
-// Route pour enregistrer un nouvel utilisateur
+// Endpoint pour enregistrer un nouvel utilisateur
 app.post('/signup', async (req, res) => {
-    const { firstName, lastName, email, password } = req.body;
-
-    try {
-        // Vérifier si l'utilisateur existe déjà
-        let check = await User.findOne({ email });
-        if (check) {
-            return res.status(400).json({
-                success: false,
-                error: 'Un utilisateur existe déjà avec le même email',
-            });
-        }
-
-        // Hacher le mot de passe
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        // Créer un nouvel utilisateur
-        const user = new User({
-            firstName,
-            lastName,
-            email,
-            password: hashedPassword,
-            tickets: []
+    let check = await User.findOne({ email: req.body.email });
+    if (check) {
+        return res.status(400).json({
+            success: false,
+            error: 'Existing user found with same email',
         });
-
-        // Sauvegarder l'utilisateur dans la base de données
-        await user.save();
-
-        // Créer un jeton JWT
-        const data = {
-            user: {
-                id: user.id,
-            },
-        };
-        const token = jwt.sign(data, "secret_ecom");
-
-        res.json({ success: true, token });
-    } catch (error) {
-        res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
+    const user = new User({
+        firstname:req.body.firstname,
+        name: req.body.name,
+        email: req.body.email,
+        password: req.body.password,
+    });
+
+    await user.save();
+    const data = {
+        user: {
+            id: user.id,
+        },
+    };
+    const token = jwt.sign(data, "secret_ecom");
+    res.json({ success: true, token });
 });
 
-// Route pour la connexion des utilisateurs
+// Endpoint pour le login de l'utilisateur
 app.post('/login', async (req, res) => {
-    const { email, password } = req.body;
-
-    try {
-        // Trouver l'utilisateur par email
-        let user = await User.findOne({ email });
-        
-        // Vérifier si l'utilisateur existe
-        if (user) {
-            // Comparer le mot de passe fourni avec le mot de passe haché stocké
-            const passMatch = await bcrypt.compare(password, user.password);
-            
-            if (passMatch) {
-                // Créer un jeton JWT si le mot de passe est correct
-                const data = {
-                    user: {
-                        id: user.id,
-                    },
-                };
-                const token = jwt.sign(data, "secret_ecom", { expiresIn: '1h' }); // Jeton expirant après 1 heure
-                
-                // Répondre avec un succès et le jeton JWT
-                res.json({ success: true, token });
-            } else {
-                // Répondre avec une erreur si le mot de passe est incorrect
-                res.status(400).json({ success: false, error: "Mot de passe incorrect" });
-            }
+    let user = await User.findOne({ email: req.body.email });
+    if (user) {
+        const passMatch = req.body.password === user.password;
+        if (passMatch) {
+            const data = {
+                user: {
+                    id: user.id,
+                },
+            };
+            const token = jwt.sign(data, "secret_ecom");
+            res.json({ success: true, token });
         } else {
-            // Répondre avec une erreur si l'email est incorrect
-            res.status(400).json({ success: false, error: "Adresse email incorrecte" });
+            res.json({ success: false, error: "wrong password" });
         }
-    } catch (error) {
-        // Gérer les erreurs en renvoyant un message d'erreur
-        res.status(500).json({ success: false, error: 'Erreur serveur' });
+    } else {
+        res.json({ success: false, error: "wrong email address" });
     }
 });
 
@@ -299,8 +263,8 @@ app.post('/searchevents', async (req, res) => {
         $or: [
             { name: { $regex: searchTerm, $options: 'i' } },
             { organizer: { $regex: searchTerm, $options: 'i' } },
-            {lieu: {$regex: searchTerm, $options: 'i'}},
-            {category:{$regex: searchTerm, $options:'i'}}
+            { lieu: { $regex: searchTerm, $options: 'i' } },
+            { category: { $regex: searchTerm, $options: 'i' } }
         ]
     });
     res.json(events);

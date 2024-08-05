@@ -19,7 +19,7 @@ const NewEvents = () => {
     }, []);
 
     return (
-        <section className='bg-blue-900 py-16 bg-with-image'>
+        <section className='bg-blue-950 py-16 bg-with-image'>
             <div className='text-center mb-12'>
                 <span className='text-3xl font-bold text-white py-2 px-4 rounded-xl shadow-xl'>
                     Les événements à venir
