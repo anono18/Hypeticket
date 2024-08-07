@@ -3,6 +3,7 @@ import { Link, NavLink } from "react-router-dom";
 // Importation des images / svg
 import Navbar from "./Navbar"
 import { MdMenu, MdClose } from "react-icons/md";
+import { FaArrowRight } from "react-icons/fa";
 
 const Header = () => {
     const [menuOpened, setMenuOpened] = useState(false);
@@ -29,7 +30,7 @@ const Header = () => {
         <header className="max-padd-container w-full z-50 bg-blue-950">
             <div className="flexBetween py-3">
                 <Link to="/" className="flex items-center gap-x-2">
-                    <span className="bold-24 hidden xs:flex "><span className="text-secondary text-2xl">HYPE</span>-<span className="text-secondary text-2xl">TICKETS</span></span>
+                    <span className="bold-24 hidden xs:flex "><span className="text-secondary text-2xl">HYPE</span><span className="text-white">-</span><span className="text-secondary text-2xl">TICKETS</span></span>
                 </Link>
                 {/** Navbar et bouton */}
                 <div className="flexCenter gap-x-4 ">
@@ -49,10 +50,10 @@ const Header = () => {
                         <div className="flexBetween sm:gap-x-0 ">
                             {localStorage.getItem('auth-token') ? 
                                 <NavLink onClick={() => { localStorage.removeItem('auth-token'); window.location.replace('/') }} to={'/login'} className={'btn-secondary flexCenter gap-x-2 medium-16 rounded-xl'}>
-                                    Logout
+                                    Logout <FaArrowRight />
                                 </NavLink> :
                                     <NavLink to={'/login'} className={'btn-secondary flexCenter gap-x-2 medium-16 rounded-xl'}>
-                                        Login
+                                        Login 
                                     </NavLink>
                             }
                         </div>

@@ -16,7 +16,7 @@ const Hero = () => {
                                 {/* <h5 className='uppercase font-bold'>Events</h5> */}
                                 <p className='regular-16'>Pour les Evenements futurs</p>
                             </div>
-                            <Link to='/events' className='btn-dark rounded-xl flexCenter !py-5 hover:text-secondary !border-black hover:bg-white'>Payer vos Tickets maintenant</Link>
+                            <Link to='/events' className='btn-dark rounded-xl flexCenter !py-5 hover:bg-secondary !border !border-none'>Payer vos Tickets maintenant</Link>
                         </div>
                     </div>
                 </div>

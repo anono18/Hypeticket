@@ -95,12 +95,12 @@ const Allevent = () => {
         fetchEvents();
     }, []);
 
-    const handleDelete = async (id) => {
-        await axios.post('http://localhost:4000/removeevent', { id });
-        // Met à jour les événements et les événements filtrés après suppression
-        setEvents(events.filter(event => event.id !== id));
-        setFilteredevents(filteredevents.filter(event => event.id !== id));
-    };
+    // const handleDelete = async (id) => {
+    //     await axios.post('http://localhost:4000/removeevent', { id });
+    //     // Met à jour les événements et les événements filtrés après suppression
+    //     setEvents(events.filter(event => event.id !== id));
+    //     setFilteredevents(filteredevents.filter(event => event.id !== id));
+    // };
 
     const handleSearch = async (e) => {
         const term = e.target.value;
@@ -143,7 +143,7 @@ const Allevent = () => {
             <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-8'>
                 {filteredevents.map(event => (
                     <div key={event.id} className='bg-white p-1 rounded-lg shadow-lg'>
-                        <Item {...event} onDelete={handleDelete} />
+                        <Item {...event}  />{/* onDelete={handleDelete} */}
                     </div>
                 ))}
             </div>

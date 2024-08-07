@@ -12,6 +12,52 @@
   /* Évite la répétition de l'image */
 }
 
+.ticket-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.ticket-table th, .ticket-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+.ticket-table th {
+  background-color: #f4f4f4;
+}
+
+.ticket-table img {
+  max-width: 100px;
+}
+
+.delete-button, .cancel-button, .pay-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin: 0 5px;
+}
+
+.delete-button {
+  color: red;
+}
+
+.cancel-button {
+  color: red;
+}
+
+.pay-button {
+  color: green;
+}
+
+.cancel-button::after {
+  content: " Annuler";
+}
+
+.pay-button::after {
+  content: " Payer";
+}
+
 
 
 
