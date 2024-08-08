@@ -11,7 +11,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-//Database connection mongoDB
+// Database connection mongoDB
 mongoose.connect("mongodb+srv://adododjialban:arnold_18@cluster2.hnhpju9.mongodb.net/?retryWrites=true&w=majority&appName=Cluster2");
 
 // API
@@ -23,7 +23,7 @@ app.get("/", (req, res) => {
 const storage = multer.diskStorage({
     destination: './upload/images',
     filename: (req, file, cb) => {
-        return cb(null, `${file.fieldname}_${Date.now()}${path.extname(file.originalname)}`);
+        cb(null, `${file.fieldname}_${Date.now()}${path.extname(file.originalname)}`);
     }
 });
 const upload = multer({ storage: storage });
@@ -114,7 +114,6 @@ app.post('/addevent', async (req, res) => {
         eventWebsite: req.body.eventWebsite
     });
 
-    console.log(event);
     await event.save();
     console.log("Ajouter");
     res.json({
@@ -126,7 +125,7 @@ app.post('/addevent', async (req, res) => {
 // Delete an event
 app.post('/removeevent', async (req, res) => {
     await Event.findOneAndDelete({ id: req.body.id });
-    console.log("evenement supprimer");
+    console.log("événement supprimé");
     res.json({
         success: true,
         name: req.body.name
@@ -136,7 +135,7 @@ app.post('/removeevent', async (req, res) => {
 // Get all events
 app.get("/allevent", async (req, res) => {
     let events = await Event.find({});
-    console.log("Liste des events");
+    console.log("Liste des événements");
     res.send(events);
 });
 
@@ -148,7 +147,25 @@ app.get('/newcollection', async (req, res) => {
     res.send(newcollection);
 });
 
+// Route PUT pour mettre à jour un événement
+// /api/events/:id
+app.put('/api/events/:id', async (req, res) => {
+    const { id } = req.params;
+    const updatedData = req.body;
 
+    try {
+        const event = await Event.findOneAndUpdate({ id: parseInt(id) }, updatedData, { new: true });
+
+        if (!event) {
+            return res.status(404).json({ error: 'Événement non trouvé' });
+        }
+
+        res.status(200).json(event);
+    } catch (error) {
+        console.error('Error updating event:', error);
+        res.status(500).json({ error: 'Erreur lors de la mise à jour de l\'événement' });
+    }
+});
 
 
 
@@ -169,15 +186,7 @@ const User = mongoose.model('User', {
         type: String,
         required: true,
     },
-    // Liste des tickets achetés (par défaut vide)
-    // tickets: [
-    //     {
-    //         type: mongoose.Schema.Types.ObjectId,
-    //         ref: 'Ticket' // Référence au modèle Ticket (à créer plus tard si nécessaire)
-    //     }
-    // ]
 });
-
 
 // Endpoint pour enregistrer un nouvel utilisateur
 app.post('/signup', async (req, res) => {
@@ -185,11 +194,11 @@ app.post('/signup', async (req, res) => {
     if (check) {
         return res.status(400).json({
             success: false,
-            error: 'Existing user found with same email',
+            error: 'Un utilisateur avec cet email existe déjà',
         });
     }
     const user = new User({
-        firstname:req.body.firstname,
+        firstname: req.body.firstname,
         name: req.body.name,
         email: req.body.email,
         password: req.body.password,
@@ -219,14 +228,12 @@ app.post('/login', async (req, res) => {
             const token = jwt.sign(data, "secret_ecom");
             res.json({ success: true, token });
         } else {
-            res.json({ success: false, error: "wrong password" });
+            res.json({ success: false, error: "Mot de passe incorrect" });
         }
     } else {
-        res.json({ success: false, error: "wrong email address" });
+        res.json({ success: false, error: "Adresse email incorrecte" });
     }
 });
-
-
 
 // Email sending functionality
 app.post('/send-email', async (req, res) => {
@@ -235,28 +242,29 @@ app.post('/send-email', async (req, res) => {
     const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
-            user: process.env.email, // Remplacez par votre email
-            pass: process.env.password // Remplacez par votre mot de passe
-        }
+            user: process.env.EMAIL_USER, // Assure-toi que ces variables d'environnement sont définies
+            pass: process.env.EMAIL_PASS,
+        },
     });
 
     const mailOptions = {
         from: email,
-        to: 'adododjialban@gmail.com', // Remplacez par l'email du destinataire
+        to: 'adododjialban@gmail.com', // L'email de l'administrateur
         subject: subject,
-        text: `Name: ${name}\nEmail: ${email}\nMessage: ${message}`
+        text: `Nom: ${name}\nEmail: ${email}\nMessage: ${message}`,
     };
 
-    transporter.sendMail(mailOptions, (error, info) => {
-        if (error) {
-            return res.status(500).send(error.toString());
-        }
-        res.status(200).send('Email sent: ' + info.response);
-    });
+    try {
+        await transporter.sendMail(mailOptions);
+        res.status(200).json({ success: true, message: 'Email envoyé avec succès' });
+    } catch (error) {
+        console.error('Error sending email:', error);
+        res.status(500).json({ error: 'Erreur lors de l\'envoi de l\'email' });
+    }
 });
 
 
-// endpoint pour la recherche 
+// Endpoint pour la recherche 
 app.post('/searchevents', async (req, res) => {
     let { searchTerm } = req.body;
     let events = await Event.find({
@@ -269,10 +277,6 @@ app.post('/searchevents', async (req, res) => {
     });
     res.json(events);
 });
-
-
-
-
 
 // Start server
 app.listen(port, (error) => {

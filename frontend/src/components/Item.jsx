@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 
 
 
+
 const Item = ({ id, name, image, ticket_Price, category, date_event, lieu, timeEvent }) => {
   return (
     // <Link onClick={() => window.scrollTo(0, 0)} to={`/product/${id}`} className='bg-white p-4 rounded-xl relative' >

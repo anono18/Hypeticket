@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 
 
 
+
 const Item = ({ id, name, image, ticket_Price, category, date_event, lieu, timeEvent, onDelete }) => {
   return (
     <div className='relative bg-white p-4 rounded-xl transition-transform transform hover:scale-105'>
@@ -26,13 +27,13 @@ const Item = ({ id, name, image, ticket_Price, category, date_event, lieu, timeE
       </div>
       <div className='mt-4'>
         <h4 className='font-bold text-lg line-clamp-2'>{name}</h4>
-        <p className='mt-2'>Catégorie: <span className='bg-sky-300 text-black rounded-md px-2'>{category}</span></p>
+        {/* <p className='mt-2'>Catégorie: <span className='bg-sky-300 text-black rounded-md px-2'>{category}</span></p>
         <p className='mt-2'><FontAwesomeIcon icon={faLocationDot} /> : {lieu}</p>
         <p className='mt-2'>
           <FontAwesomeIcon icon={faCalendarDays} /> : {new Date(date_event).toLocaleDateString()} <br />
           <FontAwesomeIcon icon={faClock} /> : {timeEvent}
         </p>
-        <p className='mt-2'>Ticket: {ticket_Price} FCFA</p>
+        <p className='mt-2'>Ticket: {ticket_Price} FCFA</p> */}
       </div>
     </div>
   )

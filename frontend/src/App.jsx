@@ -16,8 +16,8 @@ function App() {
         <Route path="/contact" element={<Contact />} />
         <Route path="/login" element={<Login />} />
         <Route path="/event" element={<Events />}>
-            <Route path=":eventId" element={<Events />} />
-          </Route>
+          <Route path=":eventId" element={<Events />} />
+        </Route>
       </Routes>
     </BrowserRouter>
   );

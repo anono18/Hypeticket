@@ -1,7 +1,14 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const Sidebar = () => {
+
+  const navigate = useNavigate(); // Initialisation du hook useNavigate
+
+  const addEvent = () => {
+    localStorage.setItem('event', JSON.stringify(null));
+    navigate('/addevent'); // Navigation vers la route /addevent
+  };
   return (
     <div className="h-screen bg-black-to-darkblue text-white w-1/4 fixed">
       <div className="p-4">
@@ -12,7 +19,9 @@ const Sidebar = () => {
               <Link to="/allevent">Tous les événements</Link>
             </li>
             <li className="mb-4">
-              <Link to="/addevent">Ajouter un événement</Link>
+              <button onClick={addEvent} className="text-left">
+                Ajouter un événement
+              </button>
             </li>
           </ul>
         </nav>

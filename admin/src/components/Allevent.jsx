@@ -15,6 +15,8 @@ const Allevent = () => {
         fetchEvents();
     }, []);
 
+    localStorage.setItem('event', JSON.stringify(null));
+
     const handleDelete = async (id) => {
         await axios.post('http://localhost:4000/removeevent', { id });
         setEvents(events.filter(event => event.id !== id));
