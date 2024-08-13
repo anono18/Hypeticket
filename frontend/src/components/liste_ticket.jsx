@@ -1,11 +1,45 @@
-import React from 'react';
-import { useHistory } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-const liste_ticket = ({ tickets, onDelete, onPay, onCancel }) => {
-  const history = useHistory();
+const ListeTicket = () => {
+  const [tickets, setTickets] = useState([]);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchTickets = async () => {
+      try {
+        const response = await fetch('/myReservations', {
+          headers: {
+            'auth-token': localStorage.getItem('token'), // Si vous utilisez un token pour l'authentification
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+
+        const data = await response.json();
+        setTickets(data.tickets); // Assurez-vous que la réponse du backend contient un champ 'tickets'
+      } catch (error) {
+        console.error('Erreur lors de la récupération des tickets :', error);
+      }
+    };
+
+    fetchTickets();
+  }, []);
 
   const handlePay = (ticketId) => {
-    history.push(`/event/${ticketId}/pay`);
+    navigate(`/event/${ticketId}/pay`);
+  };
+
+  const onCancel = (ticketId) => {
+    // Logique pour annuler un ticket (à implémenter)
+    console.log(`Annulation du ticket ${ticketId}`);
+  };
+
+  const onDelete = (ticketId) => {
+    // Logique pour supprimer un ticket (à implémenter)
+    console.log(`Suppression du ticket ${ticketId}`);
   };
 
   return (
@@ -13,7 +47,8 @@ const liste_ticket = ({ tickets, onDelete, onPay, onCancel }) => {
       <thead>
         <tr>
           <th>Image de l'événement</th>
-          <th>État</th>
+          <th>Nom de l'événement</th>
+          <th>Type de ticket</th>
           <th>Nombre de tickets</th>
           <th>Actions</th>
         </tr>
@@ -21,8 +56,9 @@ const liste_ticket = ({ tickets, onDelete, onPay, onCancel }) => {
       <tbody>
         {tickets.map((ticket) => (
           <tr key={ticket.id}>
-            <td><img src={ticket.image} alt={ticket.eventName} /></td>
-            <td>{ticket.status}</td>
+            <td><img src={ticket.eventImage} alt={ticket.eventName} className="event-image" /></td>
+            <td>{ticket.eventName}</td>
+            <td>{ticket.ticketType}</td>
             <td>{ticket.quantity}</td>
             <td>
               {ticket.status === 'payé' ? (
@@ -41,4 +77,4 @@ const liste_ticket = ({ tickets, onDelete, onPay, onCancel }) => {
   );
 };
 
-export default liste_ticket;
+export default ListeTicket;

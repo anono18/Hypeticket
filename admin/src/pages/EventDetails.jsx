@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { faCalendarDays, faClock, faLocationDot, faPencilAlt } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import Modal from '../components/Modal';
 
 const fieldTypes = {
     name: 'text',
@@ -18,7 +17,7 @@ const fieldTypes = {
     eventWebsite: 'url',
 };
 
-const EventDetails = ({ events, onUpdate }) => {
+const EventDetails = ({ events = [], onUpdate }) => {
     const { id } = useParams();
     const event = events.find(event => event.id === parseInt(id)); // Utilisez parseInt pour la comparaison
 
@@ -56,7 +55,6 @@ const EventDetails = ({ events, onUpdate }) => {
         }
     };
 
-
     const handleEdit = (field, currentValue) => {
         setFieldToEdit(field);
         setValueToEdit(currentValue);
@@ -83,23 +81,25 @@ const EventDetails = ({ events, onUpdate }) => {
                     </p>
                 </div>
             ))}
-
-            <Link  to={`/addevent`} >
-                <div>
+            <div className='mt-4'>
+                <h3 className='font-semibold'>Tickets:</h3>
+                {event.tickets && Array.isArray(event.tickets) && event.tickets.length > 0 ? (
+                    event.tickets.map((ticket, index) => (
+                        <div key={index} className='mb-2'>
+                            <p>Type: {ticket.type}</p>
+                            <p>Prix: {ticket.price} FCFA</p>
+                            <p>Disponibilité: {ticket.availability}</p>
+                        </div>
+                    ))
+                ) : (
+                    <p>Aucun ticket disponible</p>
+                )}
+            </div><br /><br />
+            <Link to={`/addevent`}>
+                <div className='bg-blue-950 text-center text-white py-2 px-4 rounded-lg flex justify-center items-center'>
                     Modifier
                 </div>
             </Link>
-            
-            {isModalOpen && (
-                <Modal
-                    fieldToEdit={fieldToEdit}
-                    currentValue={valueToEdit}
-                    onSave={handleSave}
-                    onClose={() => setIsModalOpen(false)}
-                    fieldType={fieldTypes[fieldToEdit]} // Passe le type de champ à la modal
-                />
-            )}
-
         </div>
     );
 };

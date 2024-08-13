@@ -1,12 +1,10 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react';
 import Item from './Item';
-import axios from 'axios'
-
+import axios from 'axios';
 
 const Allevent = () => {
-
-
     const [events, setEvents] = useState([]);
+
     useEffect(() => {
         const fetchEvents = async () => {
             const response = await axios.get('http://localhost:4000/allevent');
@@ -31,7 +29,7 @@ const Allevent = () => {
                 ))}
             </div>
         </div>
-    )
-}
+    );
+};
 
-export default Allevent
+export default Allevent;

@@ -5,7 +5,7 @@ import Addevent from '../components/Addevent';
 import Sidebar from '../components/Sidebar';
 import EventDetails from '../pages/EventDetails';
 import axios from 'axios';
-
+import AddTickets from '../components/AddTickets ';
 
 const Admin = () => {
   const [events, setEvents] = useState([]);
@@ -34,7 +34,7 @@ const Admin = () => {
 
   const handleCreateEvent = async (data) => {
     await axios.post('http://localhost:4000/addevent', data);
-    alert('Evenement a été ajouté!');
+    alert('Événement ajouté!');
   };
 
   if (loading) {
@@ -48,12 +48,17 @@ const Admin = () => {
   }
 
   return (
-    <div className="flex">
+    <div className="flex h-screen">
       <Sidebar />
-      <div className="ml-[25%] w-[75%] p-4">
+      <div className="flex-1 p-4 ml-64">
+        <div className='mx-auto max-w-[1440px] px-6 lg:px-20 flex flex-col items-center bg-white py-2 ring-1 rounded-lg'>
+          <h2 className="text-xl font-bold text-center">Admin Dashboard</h2>
+        </div>
+
         <Routes>
           <Route path="/allevent" element={<Allevent events={events} />} />
-          <Route path="/addevent" element={<Addevent/>} />
+          <Route path="/addevent" element={<Addevent />} />
+          <Route path="/add-tickets/:eventId" element={<AddTickets />} />
           <Route path="/" element={<h2 className="text-2xl font-bold mb-4">Bienvenue dans le tableau de bord de l'admin</h2>} />
           <Route path="/event/:id" element={<EventDetails events={events} onUpdate={handleUpdate} />} />
         </Routes>
@@ -61,5 +66,5 @@ const Admin = () => {
     </div>
   );
 };
- 
+
 export default Admin;

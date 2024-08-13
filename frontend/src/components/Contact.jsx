@@ -35,8 +35,8 @@ const Contact = () => {
     };
 
     return (
-        <form onSubmit={handleSubmit} className='flex flex-col justify-center items-center min-h-screen p-6 bg-white rounded-lg shadow-lg'>
-            <h2 className='text-2xl font-bold mb-4'>Contactez-nous</h2>
+        <form onSubmit={handleSubmit} className='flex flex-col justify-center items-center min-h-screen p-6 bg-blue-950 rounded-lg shadow-lg'>
+            <h2 className='text-2xl font-bold mb-4 text-white'>Contactez-nous</h2>
             <input
                 type='text'
                 value={name}

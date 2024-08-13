@@ -1,13 +1,9 @@
-import React from 'react'
+import React from 'react';
 import { faCalendarDays, faClock, faLocationDot, faEye, faTrashAlt } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Link } from 'react-router-dom';
 
-
-
-
-
-const Item = ({ id, name, image, ticket_Price, category, date_event, lieu, timeEvent, onDelete }) => {
+const Item = ({ id, name, image, tickets = [], category, date_event, lieu, timeEvent, onDelete }) => {
   return (
     <div className='relative bg-white p-4 rounded-xl transition-transform transform hover:scale-105'>
       <div className='relative'>
@@ -27,16 +23,27 @@ const Item = ({ id, name, image, ticket_Price, category, date_event, lieu, timeE
       </div>
       <div className='mt-4'>
         <h4 className='font-bold text-lg line-clamp-2'>{name}</h4>
-        {/* <p className='mt-2'>Catégorie: <span className='bg-sky-300 text-black rounded-md px-2'>{category}</span></p>
+        <p className='mt-2'>Catégorie: <span className='bg-sky-300 text-black rounded-md px-2'>{category}</span></p>
         <p className='mt-2'><FontAwesomeIcon icon={faLocationDot} /> : {lieu}</p>
         <p className='mt-2'>
           <FontAwesomeIcon icon={faCalendarDays} /> : {new Date(date_event).toLocaleDateString()} <br />
           <FontAwesomeIcon icon={faClock} /> : {timeEvent}
         </p>
-        <p className='mt-2'>Ticket: {ticket_Price} FCFA</p> */}
+        <p className='mt-2'>
+          Tickets:
+          {tickets.length > 0 ? (
+            tickets.map((ticket, index) => (
+              <span key={index} className='block'>
+                Type: {ticket.type} - Price: {ticket.price} FCFA - Availability: {ticket.availability}
+              </span>
+            ))
+          ) : (
+            <span>Aucun ticket disponible</span>
+          )}
+        </p>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Item
+export default Item;

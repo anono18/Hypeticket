@@ -37,6 +37,30 @@ app.post("/upload", upload.single('product'), (req, res) => {
     });
 });
 
+
+
+const Ticket = mongoose.model("tickets",{
+    type: {
+        type: String,
+        required: true
+    },
+    price: {
+        type: Number,
+        required: true
+    },
+    availability: {
+        type: Number,
+        required: true
+    },
+    event: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'events',
+        required: true
+    }
+});
+
+//***************************************************tous concernant les evnements*********************************************
+
 // Schema for creating new events
 const Event = mongoose.model("events", {
     id: {
@@ -59,20 +83,12 @@ const Event = mongoose.model("events", {
         type: String,
         required: true
     },
-    ticket_Price: {
-        type: Number,
-        required: true
-    },
     supportContact: {
         type: Number,
         required: false
     },
     date_event: {
         type: Date,
-        required: true
-    },
-    ticket_Availability: {
-        type: Number,
         required: true
     },
     lieu: {
@@ -90,8 +106,17 @@ const Event = mongoose.model("events", {
     eventWebsite: {
         type: String,
         required: false
-    }
+    },
+    reserve:{
+        type:Number
+    },
+    // tickets: [
+    //     {
+    //     type: mongoose.Schema.Types.ObjectId,
+    //     ref: 'tickets'}
+    // ]
 });
+
 
 // Add an event
 app.post('/addevent', async (req, res) => {
@@ -99,28 +124,30 @@ app.post('/addevent', async (req, res) => {
     let id = events.length > 0 ? events[events.length - 1].id + 1 : 1;
 
     const event = new Event({
-        id: id,
-        name: req.body.name,
-        image: req.body.image,
-        category: req.body.category,
-        description: req.body.description,
-        ticket_Price: req.body.ticket_Price,
-        supportContact: req.body.supportContact,
-        date_event: req.body.date_event,
-        ticket_Availability: req.body.ticket_Availability,
-        lieu: req.body.lieu,
-        organizer: req.body.organizer,
-        timeEvent: req.body.timeEvent,
-        eventWebsite: req.body.eventWebsite
+         id: id,
+            name: req.body.name,
+            image: req.body.image,
+            category: req.body.category,
+            description: req.body.description,
+            tickets: req.body.tickets, 
+            supportContact: req.body.supportContact,
+            date_event: req.body.date_event,
+            lieu: req.body.lieu,
+            organizer: req.body.organizer,
+            timeEvent: req.body.timeEvent,
+            eventWebsite: req.body.eventWebsite,
+            reserve: 0
     });
 
     await event.save();
-    console.log("Ajouter");
+    console.log("evenement ajouter");
     res.json({
         success: true,
-        name: req.body.name
+        name: req.body.name,
+        eventId: event._id
     });
 });
+
 
 // Delete an event
 app.post('/removeevent', async (req, res) => {
@@ -152,7 +179,6 @@ app.get('/newcollection', async (req, res) => {
 app.put('/api/events/:id', async (req, res) => {
     const { id } = req.params;
     const updatedData = req.body;
-
     try {
         const event = await Event.findOneAndUpdate({ id: parseInt(id) }, updatedData, { new: true });
 
@@ -168,6 +194,52 @@ app.put('/api/events/:id', async (req, res) => {
 });
 
 
+
+// Ajouter des tickets à un événement
+app.post('/add-tickets/:eventId', async (req, res) => {
+    const { eventId } = req.params;
+    const { tickets } = req.body; // tickets devrait être un tableau de tickets
+
+    try {
+        // Vérifier que l'événement existe
+        const event = await Event.findById(eventId);
+        if (!event) {
+            return res.status(404).json({ message: 'Événement non trouvé' });
+        }
+
+        // Créer et sauvegarder les tickets
+        const createdTickets = await Promise.all(tickets.map(ticket => {
+            const newTicket = new Ticket({ ...ticket, event: eventId });
+            return newTicket.save();
+        }));
+
+        res.status(201).json({ 
+            message: 'Tickets ajoutés avec succès',
+            tickets: createdTickets 
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+
+
+// endpoint pour récupérer tous les tickets associés à un événement spécifique
+app.get('/tickets', async (req, res) => {
+    try {
+        const tickets = await Ticket.find({});
+        res.json(tickets);
+    } catch (error) {
+        console.error('Erreur lors de la récupération des tickets:', error);
+        res.status(500).json({ message: 'Erreur serveur lors de la récupération des tickets' });
+    }
+});
+
+
+
+
+
+//********************************************tous concernant les utilisateur ********************************************
 
 // Schéma pour les utilisateurs
 const User = mongoose.model('User', {
@@ -186,7 +258,12 @@ const User = mongoose.model('User', {
         type: String,
         required: true,
     },
+    ticketData: {
+        type: Object,
+        default: {}, 
+    },
 });
+
 
 // Endpoint pour enregistrer un nouvel utilisateur
 app.post('/signup', async (req, res) => {
@@ -202,6 +279,7 @@ app.post('/signup', async (req, res) => {
         name: req.body.name,
         email: req.body.email,
         password: req.body.password,
+        ticketData: {}, // Initialise ticketData comme un objet vide
     });
 
     await user.save();
@@ -213,6 +291,7 @@ app.post('/signup', async (req, res) => {
     const token = jwt.sign(data, "secret_ecom");
     res.json({ success: true, token });
 });
+
 
 // Endpoint pour le login de l'utilisateur
 app.post('/login', async (req, res) => {
@@ -235,14 +314,106 @@ app.post('/login', async (req, res) => {
     }
 });
 
-// Email sending functionality
+
+
+
+
+
+
+// le middleware de verification de connection
+const fetchUser = async (req, res, next) => {
+    const token = req.header('auth-token');
+    if (!token) {
+        return res.status(401).send({ errors: 'Please authenticate using a valid login' });
+    }
+
+    try {
+        const data = jwt.verify(token, 'secret_ecom'); 
+        req.user = data.user; 
+        next(); 
+    } catch (error) {
+        res.status(401).send({ errors: 'Please authenticate using a valid token' });
+    }
+};
+
+
+
+// endpoint pour reserver un ticket 
+app.post('/addTicketToCart', fetchUser, async (req, res) => {
+    try {
+        const { ticketId, quantity } = req.body;
+
+        // Récupère les données de l'utilisateur
+        let userData = await User.findOne({ _id: req.user.id });
+        // Vérifie si le ticket existe déjà dans ticketData
+        if (!userData.ticketData[ticketId]) {
+            userData.ticketData[ticketId] = 0; // Initialise si le ticket n'existe pas encore
+        }
+        // Met à jour la quantité de tickets pour cet événement
+        userData.ticketData[ticketId] += quantity;
+        // Met à jour les données de l'utilisateur avec les nouveaux tickets
+        await User.findOneAndUpdate(
+            { _id: req.user.id },
+            { ticketData: userData.ticketData }
+        );
+
+        res.send('Ticket added to cart');
+    } catch (error) {
+        console.error("Erreur lors de l'ajout du ticket au panier :", error);
+        res.status(500).json({
+            success: false,
+            message: "Une erreur s'est produite lors de l'ajout du ticket au panier"
+        });
+    }
+});
+
+// endpoint pour recuperer les reservation par un client 
+app.get('/myReservations', fetchUser, async (req, res) => {
+    try {
+        // Récupérer les données de l'utilisateur
+        let userData = await User.findOne({ _id: req.user.id }).populate({
+            path: 'ticketData.ticketId',
+            populate: {
+                path: 'event', // Remplir l'information de l'événement
+                model: 'events'
+            }
+        });
+
+        // Récupérer les détails des tickets
+        const tickets = Object.keys(userData.ticketData).map(ticketId => ({
+            eventImage: userData.ticketData[ticketId].event.image,
+            eventName: userData.ticketData[ticketId].event.name,
+            ticketType: userData.ticketData[ticketId].type,
+            quantity: userData.ticketData[ticketId].quantity,
+            status: 'réservé', // ou 'payé' selon votre logique
+            id: ticketId
+        }));
+
+        res.json({ success: true, tickets });
+    } catch (error) {
+        console.error("Erreur lors de la récupération des réservations :", error);
+        res.status(500).json({
+            success: false,
+            message: "Une erreur s'est produite lors de la récupération des réservations"
+        });
+    }
+});
+
+
+
+
+
+
+
+
+//*********************************************************endpoint pour faire l'email****************************************
 app.post('/send-email', async (req, res) => {
     const { name, email, subject, message } = req.body;
 
     const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
-            user: process.env.EMAIL_USER, // Assure-toi que ces variables d'environnement sont définies
+            user: process.env.EMAIL_USER, 
             pass: process.env.EMAIL_PASS,
         },
     });
@@ -264,7 +435,7 @@ app.post('/send-email', async (req, res) => {
 });
 
 
-// Endpoint pour la recherche 
+//***************************************************************Endpoint pour la recherche*******************************
 app.post('/searchevents', async (req, res) => {
     let { searchTerm } = req.body;
     let events = await Event.find({
