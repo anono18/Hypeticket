@@ -21,6 +21,19 @@ export default {
           90: "#141414",
         },
       },
+      keyframes: {
+        "shine-pulse": {
+          "0%": {
+            "background-position": "0% 0%",
+          },
+          "50%": {
+            "background-position": "100% 100%",
+          },
+          to: {
+            "background-position": "0% 0%",
+          },
+        },
+      },
       screens: {
         xs: "400px",
         "3xl": "1680px",

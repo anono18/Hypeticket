@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import EventHd from '../components/EventHd';
-// import PopularProducts from '../components/PopularProducts';
 import EventDescription from '../components/EventDescription';
 import EventDisplay from '../components/EventDisplay';
 import Header from '../components/Header';
@@ -21,28 +20,30 @@ export const Product = () => {
         setIsLoading(false);
       })
       .catch((error) => {
-        console.error('Error fetching products:', error);
-        setIsLoading(false);
+        console.error('Error fetching events:', error);
+        
       });
   }, []);
 
   const event = allevent.find((e) => e.id === Number(eventId));
 
+
   if (isLoading) {
-    return <div>Loading...</div>;
+    return  
+    (
+      <div className="loader">...</div>
+    );
   }
 
   if (!event) {
-    return <div>Event not found!</div>;
+    return <div loader>Event not found!</div>;
   }
 
   return (
     <section>
         <Header />
-        {/* <EventHd event={event} /> */}
         <EventDisplay event={event} />
         <EventDescription event={event} /><br /> <br />
-        {/* <PopularProducts /> */}
       <Footer />
     </section>
   );

@@ -1,6 +1,7 @@
 import React from 'react'
 import Header from '../components/Header'
 import Hero from '../components/Hero'
+// import Essaie from './Essaie'
 import Footer from '../components/Footer'
 import NewEvents from '../components/NewEvents'
 import Utilities from '../components/Utilities'
@@ -12,6 +13,7 @@ const home = () => {
     <>
       <Header />
       <Hero />
+      {/* <Essaie /> */}
       <NewEvents />
       <Utilities/>
       <Start />

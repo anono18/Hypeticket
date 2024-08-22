@@ -9,6 +9,8 @@ const EventDescription = (props) => {
     const [selectedTicket, setSelectedTicket] = useState('');
     const [quantity, setQuantity] = useState(1);
     const [paymentMethod, setPaymentMethod] = useState('');
+    const [showDialog, setShowDialog] = useState(false);
+    const [dialogMessage, setDialogMessage] = useState('');
 
     useEffect(() => {
         if (event._id) {
@@ -31,40 +33,52 @@ const EventDescription = (props) => {
     };
 
     const handleQuantityChange = (event) => {
-        setQuantity(Math.max(1, event.target.value)); // Empêche les quantités inférieures à 1
+        setQuantity(Math.max(1, parseInt(event.target.value)));
     };
 
     const handlePaymentMethodChange = (method) => {
         setPaymentMethod(method);
     };
 
-    const handleReserve = async (ticketId, quantity) => {
-        try {
-            const token = localStorage.getItem('auth-token'); // Récupérer le token depuis localStorage
+    const handleReserve = async () => {
+        const token = localStorage.getItem('auth-token');
+        if (!token) {
+            setDialogMessage('Veuillez vous connecter pour réserver un ticket.');
+            setShowDialog(true);
+            return;
+        }
     
+        if (!selectedTicket) {
+            setDialogMessage('Veuillez sélectionner un ticket.');
+            setShowDialog(true);
+            return;
+        }
+    
+        try {
             const response = await axios.post(
-                'http://localhost:4000/addTicketToCart',
-                {
-                    ticketId,
-                    quantity
-                },
-                {
-                    headers: {
-                        'auth-token': token
-                    }
-                }
+                'http://localhost:4000/reserve',
+                { ticketId: selectedTicket, quantity },  
+                { headers: { 'auth-token': token } }
             );
     
-            console.log('Ticket réservé avec succès:', response.data);
+            setDialogMessage('Ticket réservé avec succès ! ');
+            setShowDialog(true);
         } catch (error) {
             console.error('Erreur lors de la réservation:', error);
+            setDialogMessage('Une erreur est survenue lors de la réservation. Veuillez réessayer.');
+            setShowDialog(true);
         }
     };
+    
+
+    const totalPrice = selectedTicket && tickets.length
+        ? tickets.find(ticket => ticket._id === selectedTicket).price * quantity
+        : 0;
 
     return (
-        <div className='max-padd-container mt-20 flex gap-8'>
+        <div className='max-padd-container mt-20 grid lg:flex lg:gap-8 sm:grid-cols-1 lg:grid-cols-2'>
             {/* Div à gauche */}
-            <div className='w-1/2 bg-white rounded-lg shadow-lg p-6'>
+            <div className='w-full lg:w-1/2 bg-white rounded-lg shadow-lg p-6'>
                 <div className='flex justify-between items-center mb-4'>
                     <button className='btn-dark rounded-sm !text-xs !py-[6px] w-36'>
                         Description
@@ -74,9 +88,6 @@ const EventDescription = (props) => {
                     <p className='text-sm text-gray-600'>{event.description}</p>
                 </div>
                 <div className='space-y-3'>
-                    <div className='bg-gray-100 p-4 rounded-md border border-gray-200'>
-                        <p className='text-lg font-semibold text-gray-700'>{event.ticket_Price} FCFA</p>
-                    </div>
                     <div className='bg-gray-100 p-4 rounded-md border border-gray-200'>
                         <p className='text-sm text-gray-600'>Le {event.date_event} à {event.timeEvent}</p>
                     </div>
@@ -92,7 +103,7 @@ const EventDescription = (props) => {
                 </div>
             </div>
             {/* Div à droite */}
-            <div className='w-1/2 bg-white rounded-lg shadow-lg p-6 flex flex-col'>
+            <div className='w-full lg:w-1/2 bg-white rounded-lg shadow-lg p-6 flex flex-col'>
                 <div className='space-y-4 mb-6'>
                     <select
                         value={selectedTicket}
@@ -110,11 +121,15 @@ const EventDescription = (props) => {
                         type='number'
                         value={quantity}
                         onChange={handleQuantityChange}
-                        className='p-2 border border-gray-300 rounded mt-2'
+                        className='p-2 ml-5 border border-gray-300 rounded mt-2 shadow-sm'
                         min='1'
                     />
                 </div>
-                <h3 className='font-semibold text-gray-800 mb-2 btn-dark rounded-sm !text-xs !py-[6px] w-36'>
+                <div className='mt-4 w-full'>
+                    <p className='text-xl font-semibold text-center'>Total: {totalPrice} FCFA</p>
+                </div>
+
+                <h3 className='font-semibold text-gray-800 mb-2 btn-dark rounded-sm !text-xs !py-[6px] w-36 mt-6'>
                     Payer par
                 </h3>
                 <div className='flex gap-4 mb-4'>
@@ -134,7 +149,7 @@ const EventDescription = (props) => {
                 <div className='flex gap-4'>
                     <button
                         className='btn-secondary rounded-lg w-full'
-                        onClick={() => handleReserve(selectedTicket, quantity)}
+                        onClick={handleReserve}
                         disabled={!selectedTicket}
                     >
                         RESERVER
@@ -144,6 +159,19 @@ const EventDescription = (props) => {
                     </button>
                 </div>
             </div>
+            {showDialog && (
+                <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center'>
+                    <div className='bg-white p-6 rounded-lg shadow-lg'>
+                        <p className='mb-4 text-2xl text-black'>{dialogMessage} <br />vous avez réservé {quantity} tickets</p>
+                        <button
+                            className='btn bg-green-600 p-3 text-white text-xl rounded-lg w-full'
+                            onClick={() => setShowDialog(false)}
+                        >
+                            OK
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

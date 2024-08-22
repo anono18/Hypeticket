@@ -5,12 +5,14 @@ import Contact from './pages/Contact'
 import Login from './pages/Login';
 import Eventslist from './pages/Eventslist';
 import Events from './pages/Events'
+// import Essaie from './pages/Essaie';
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home />} />
+        {/* <Route path="/essaie" element={<Essaie />} /> */}
         <Route path="/eventslist" element={<Eventslist />} />
         <Route path="/listTicket" element={<ListTicket />} />
         <Route path="/contact" element={<Contact />} />

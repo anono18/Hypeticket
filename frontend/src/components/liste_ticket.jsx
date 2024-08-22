@@ -1,27 +1,50 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const ListeTicket = () => {
   const [tickets, setTickets] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchTickets = async () => {
+      const token = localStorage.getItem('auth-token');
+      if (!token) {
+        setIsAuthenticated(false);
+        setLoading(false);
+        return;
+      }
+
       try {
-        const response = await fetch('/myReservations', {
-          headers: {
-            'auth-token': localStorage.getItem('token'), // Si vous utilisez un token pour l'authentification
-          },
+        const response = await axios.get('http://localhost:4000/myreservations', {
+          headers: { 'auth-token': token },
         });
 
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
+        const data = response.data;
+        const formattedTickets = data.map((reservation) => {
+          if (!reservation.ticket || !reservation.ticket.event) {
+            return null;
+          }
 
-        const data = await response.json();
-        setTickets(data.tickets); // Assurez-vous que la réponse du backend contient un champ 'tickets'
+          return {
+            id: reservation._id,
+            eventImage: reservation.ticket.event.image || 'default_image_url', // Image par défaut si `image` est null
+            eventName: reservation.ticket.event.name || 'Événement inconnu',
+            ticketType: reservation.ticket.type || 'Type inconnu',
+            quantity: reservation.quantity || 0,
+            price: reservation.ticket.price || 0,
+          };
+        }).filter(ticket => ticket !== null); // Supprimer les tickets null
+
+        setTickets(formattedTickets);
       } catch (error) {
         console.error('Erreur lors de la récupération des tickets :', error);
+        setError('Erreur lors de la récupération des tickets.');
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -32,49 +55,91 @@ const ListeTicket = () => {
     navigate(`/event/${ticketId}/pay`);
   };
 
-  const onCancel = (ticketId) => {
-    // Logique pour annuler un ticket (à implémenter)
-    console.log(`Annulation du ticket ${ticketId}`);
+  const onCancel = async (ticketId) => {
+    if (window.confirm(`Voulez-vous vraiment annuler le ticket ${ticketId} ?`)) {
+      try {
+        const token = localStorage.getItem('auth-token');
+        await axios.delete(`http://localhost:4000/reservations/${ticketId}`, {
+          headers: { 'auth-token': token },
+        });
+        setTickets(tickets.filter(ticket => ticket.id !== ticketId));
+        console.log(`Annulation du ticket ${ticketId}`);
+      } catch (error) {
+        console.error('Erreur lors de la suppression du ticket :', error);
+      }
+    }
   };
 
-  const onDelete = (ticketId) => {
-    // Logique pour supprimer un ticket (à implémenter)
-    console.log(`Suppression du ticket ${ticketId}`);
-  };
+  if (!isAuthenticated) {
+    return (
+      <div className="message">
+        <p>Veuillez vous connecter pour voir la liste de vos réservations.</p>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="overlay">
+        <div className="loader"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return <div>{error}</div>;
+  }
 
   return (
-    <table className="ticket-table">
-      <thead>
-        <tr>
-          <th>Image de l'événement</th>
-          <th>Nom de l'événement</th>
-          <th>Type de ticket</th>
-          <th>Nombre de tickets</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {tickets.map((ticket) => (
-          <tr key={ticket.id}>
-            <td><img src={ticket.eventImage} alt={ticket.eventName} className="event-image" /></td>
-            <td>{ticket.eventName}</td>
-            <td>{ticket.ticketType}</td>
-            <td>{ticket.quantity}</td>
-            <td>
-              {ticket.status === 'payé' ? (
-                <button onClick={() => onDelete(ticket.id)} className="delete-button">🗑️</button>
-              ) : (
-                <div>
-                  <button onClick={() => onCancel(ticket.id)} className="cancel-button">❌ Annuler</button>
-                  <button onClick={() => handlePay(ticket.id)} className="pay-button">✔️ Payer</button>
-                </div>
-              )}
-            </td>
+    <div>
+      <table className="ticket-table">
+        <thead>
+          <tr>
+            <th>Image de l'événement</th>
+            <th>Nom de l'événement</th>
+            <th>Type de ticket</th>
+            <th>Nombre de tickets</th>
+            <th>Total</th>
+            <th>Actions</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {tickets.map((ticket) => (
+            <tr key={ticket.id}>
+              <td>
+                <img
+                  src={ticket.eventImage}
+                  alt={ticket.eventName}
+                  className="event-image"
+                />
+              </td>
+              <td className="text-center">{ticket.eventName}</td>
+              <td className="text-center">{ticket.ticketType}</td>
+              <td className="text-center">{ticket.quantity}</td>
+              <td className="text-center">
+                {ticket.price * ticket.quantity} FCFA
+              </td>
+              <td className="flex">
+                <button
+                  onClick={() => onCancel(ticket.id)}
+                  className="cancel-button"
+                >
+                  ❌
+                </button>
+                <button
+                  onClick={() => handlePay(ticket.id)}
+                  className="pay-button"
+                >
+                  ✔️
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 };
 
 export default ListeTicket;
+

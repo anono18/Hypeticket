@@ -27,10 +27,10 @@ const Header = () => {
     }, [menuOpened]);
 
     return (
-        <header className="max-padd-container w-full z-50 bg-blue-950">
+        <header className="max-padd-container w-full z-50 bg-blue-950 ">
             <div className="flexBetween py-3">
                 <Link to="/" className="flex items-center gap-x-2">
-                    <span className="bold-24 hidden xs:flex "><span className="text-secondary text-2xl">HYPE</span><span className="text-white">-</span><span className="text-secondary text-2xl">TICKETS</span></span>
+                    <span className="bold-24  xs:flex "><span className="text-secondary text-2xl">HYPE</span><span className="text-white">-</span><span className="text-secondary text-2xl">TICKETS</span></span>
                 </Link>
                 {/** Navbar et bouton */}
                 <div className="flexCenter gap-x-4 ">

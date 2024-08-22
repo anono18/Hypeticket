@@ -2,14 +2,215 @@
 @tailwind components;
 @tailwind utilities;
 
+
+
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: url('./assets/public.jpeg') no-repeat center center;
+  background-size: cover;
+}
+
+.login-box {
+  background: rgba(255, 255, 255, 0.8);
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+}
+
+.login-header {
+  font-size: 24px;
+  color: #4B0082;
+  margin-bottom: 1rem;
+  font-weight: bold;     
+  text-transform: uppercase;
+  text-decoration: underline;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.login-input {
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+.login-button-container {
+  margin-top: 1rem;
+}
+
+.login-button {
+  background-color: #007bff;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.login-button:hover {
+  background-color: #0056b3;
+}
+
+.toggle-link {
+  margin-top: 1rem;
+  font-size: 14px;
+}
+
+.toggle-link span {
+  color: #007bff;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.terms-container {
+  margin-top: 1rem;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.terms-container input {
+  margin-right: 0.5rem;
+}
+
+
+
+/* Container for the grid pattern background */
+.bg-grid-pattern {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Grid pattern overlay */
+.bg-grid-pattern::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, rgba(255, 255, 255, 0.068) 1px, transparent 1px),
+    linear-gradient(rgba(255, 255, 255, 0.062) 1px, transparent 1px);
+  background-size: 40px 40px;
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+/* Darker grid cells */
+.bg-grid-pattern::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-size: 40px 40px; 
+  pointer-events: none;
+  background-image:
+    /* radial-gradient(circle, #01000c 10%, transparent 11%),  */
+    linear-gradient(90deg, rgba(255, 255, 255, 0.027) 1px, transparent 1px),
+    linear-gradient(rgba(255, 255, 255, 0.075) 1px, transparent 1px);
+  background-size: 400px 400px, 40px 40px, 40px 40px; 
+  opacity: 0.4;
+  animation: pulse 10s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 0.4;
+  }
+}
+
+
+
+
+
+
+
+
+
+/* Container to center the button */
+.shimmer-button-container {
+  display: flex;
+  justify-content: center;
+  /* align-items: center;
+  min-height: 16rem;
+  z-index: 10; */
+}
+
+/* Shimmer Button Styles */
+.shimmer-button {
+  position: relative;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: white;
+  background: linear-gradient(90deg,#4B0082, #11006e, #03288d);
+  /* #fcb903 */
+  background-size: 200% 100%;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  overflow: hidden;
+  text-align: center;
+  text-transform: uppercase;
+  transition: background 0.3s ease;
+  box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.shimmer-button:hover {
+  background-position: 100% 0;
+}
+
+/* Shimmer Animation */
+.shimmer-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -150%;
+  width: 200%;
+  height: 100%;
+  background: linear-gradient(120deg,
+      rgba(255, 255, 255, 0.2),
+      rgba(255, 255, 255, 0.5),
+      rgba(255, 255, 255, 0.2));
+  transform: skewX(-20deg);
+  transition: transform 0.7s ease;
+}
+
+.shimmer-button:hover::before {
+  transform: translateX(150%);
+}
+
+
+
+
+
 .bg-with-image {
   background-image: url('C:/Users/adodo/Downloads/stage/HYPE ticket/frontend/src/assets');
   background-size: cover;
-  /* Ajuste l'image pour couvrir l'élément */
   background-position: left;
-  /* Centre l'image */
   background-repeat: repeat;
-  /* Évite la répétition de l'image */
 }
 
 .ticket-table {
@@ -17,7 +218,8 @@
   border-collapse: collapse;
 }
 
-.ticket-table th, .ticket-table td {
+.ticket-table th,
+.ticket-table td {
   border: 1px solid #ddd;
   padding: 8px;
   text-align: left;
@@ -31,7 +233,9 @@
   max-width: 100px;
 }
 
-.delete-button, .cancel-button, .pay-button {
+.delete-button,
+.cancel-button,
+.pay-button {
   background: none;
   border: none;
   cursor: pointer;
@@ -79,6 +283,178 @@
   border: 5px solid white;
   clip-path: polygon(0% 0%, 100% 0%, 90% 100%, 10% 100%);
   z-index: -1;
+}
+
+
+
+.ticket-table {
+  width: 100%;
+  /* border-collapse: collapse; */
+}
+
+.center-text {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.event-image {
+  /* width: 100px;
+  height: 100px; */
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+
+
+/* CSS pour le message de connexion */
+.message {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  /* Utilise toute la hauteur de la vue pour centrer le message verticalement */
+  background-color: #f8f9fa;
+  /* Couleur de fond légère */
+  color: #333;
+  /* Couleur du texte */
+  font-size: 1.2rem;
+  /* Taille du texte */
+  text-align: center;
+  /* Centre le texte horizontalement */
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  /* Ombre légère pour le contour */
+}
+
+.message p {
+  margin: 0;
+  /* Enlève les marges par défaut du paragraphe */
+  font-weight: bold;
+  /* Met le texte en gras */
+}
+
+.message a {
+  color: #007bff;
+  /* Couleur du lien */
+  text-decoration: underline;
+  /* Souligne le lien */
+  font-weight: bold;
+  /* Met le lien en gras */
+}
+
+.message a:hover {
+  color: #0056b3;
+  /* Couleur du lien au survol */
+}
+
+
+
+
+/* Styles pour la superposition */
+.overlay {
+  position: fixed;
+  /* Fixe la superposition par rapport à la fenêtre */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.9);
+  /* Couleur de fond blanche avec transparence */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  /* Assure-toi que la superposition est au-dessus de tout autre contenu */
+}
+
+
+.shine-border-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.shine-border {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(15deg, #A07CFE, #FE8FB5, #FFBE7B);
+  opacity: 0.5;
+  transform: rotate(15deg);
+  animation: shine 5s infinite linear;
+}
+
+@keyframes shine {
+  0% {
+    transform: rotate(15deg) translateX(-100%);
+  }
+
+  100% {
+    transform: rotate(15deg) translateX(100%);
+  }
+}
+
+
+
+
+/* HTML: <div class="loader"></div> */
+/* HTML: <div class="loader"></div> */
+.loader {
+  width: 30px;
+  aspect-ratio: 1;
+  display: grid;
+  transform: translateY(100%);
+}
+
+.loader::before,
+.loader::after {
+  content: "";
+  grid-area: 1/1;
+  border-radius: 50%;
+  transform-origin: bottom;
+  position: relative;
+}
+
+.loader::before {
+  background: radial-gradient(at 30% 30%, #0000, #000a) red;
+  transform: scaleY(0.65);
+  top: 0;
+  animation: l11-1, l11-2;
+  animation-duration: 2s;
+  animation-timing-function: cubic-bezier(0, 400, 1, 400), ease;
+  animation-iteration-count: infinite;
+}
+
+.loader::after {
+  background: #ccc;
+  filter: blur(8px);
+  transform: scaleY(0.3) translate(0px, 0px);
+  left: 0;
+  animation: l11-3 2s cubic-bezier(0, 400, 1, 400) infinite;
+}
+
+@keyframes l11-1 {
+  100% {
+    top: -0.2px
+  }
+}
+
+@keyframes l11-2 {
+
+  4%,
+  96% {
+    transform: scaleY(1)
+  }
+}
+
+@keyframes l11-3 {
+  100% {
+    transform: scaleY(0.3) translate(0.1px, -0.1px)
+  }
 }
 
 

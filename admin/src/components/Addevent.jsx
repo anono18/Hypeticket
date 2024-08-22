@@ -417,7 +417,7 @@ const Addevent = () => {
     formData.append('name', name);
     formData.append('category', category);
     formData.append('description', description);
-    formData.append('tickets', JSON.stringify(tickets));  // Ajout de tickets sous forme de chaîne JSON
+    formData.append('tickets', JSON.stringify(tickets));  
     formData.append('supportContact', supportContact);
     formData.append('date_event', dateEvent);
     formData.append('lieu', lieu);
@@ -449,18 +449,18 @@ const Addevent = () => {
       eventWebsite,
     };
 
-    await axios.put(`http://localhost:4000/api/events/${storedEvent.id}`, eventData);
+    await axios.put(`http://localhost:4000/events/${storedEvent.id}`, eventData);
     alert('Événement mis à jour!');
   };
 
   return (
-    <div className="flex">
+    <div className="flex bg-blue-50">
       <div className="flex-1 p-8">
         {!storedEvent ? <h1 className="text-2xl font-bold mb-6">Add New Event</h1> : <h1 className="text-2xl font-bold mb-6">Update Event</h1>}
         <form onSubmit={storedEvent ? handleUpdate : handleSubmit} className="space-y-6">
           <div className="flex flex-col items-center space-y-4">
             <label className="cursor-pointer">
-              <div className="w-40 h-40 bg-gray-200 flex items-center justify-center rounded-lg border border-gray-300">
+              <div className="w-80 h-40 bg-gray-200 flex items-center justify-center rounded-lg border border-gray-300">
                 {image && image instanceof File ? (
                   <img src={URL.createObjectURL(image)} alt="Preview" className="w-full h-full object-cover rounded-lg" />
                 ) : (

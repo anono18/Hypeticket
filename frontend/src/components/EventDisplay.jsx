@@ -4,9 +4,13 @@ const EventDisplay = (props) => {
     const { event } = props;
 
     return (
-        <section className='w-full h-[80vh]'>
-            <div className='relative w-full h-full '>
-                <img src={event.image} alt="bigImg" className='absolute flex justify-center left-96 top-1 rounded-sm  h-full w-auto object-fill bg-slate-50' />
+        <section className='w-full h-[80vh] flex justify-center items-center'>
+            <div className='relative w-full h-full flex justify-center items-center'>
+                <img 
+                    src={event.image} 
+                    alt="bigImg" 
+                    className='max-h-full max-w-full object-contain rounded-sm bg-slate-50' 
+                />
             </div>
         </section>
     );

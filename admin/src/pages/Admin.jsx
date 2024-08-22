@@ -38,17 +38,12 @@ const Admin = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <p className="text-lg font-semibold text-gray-600 animate-pulse">
-          Chargement des événements...
-        </p>
-      </div>
-    );
+    return <div className="overlay">
+      <div className="loader"></div>
+    </div>;
   }
-
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen bg-blue-50">
       <Sidebar />
       <div className="flex-1 p-4 ml-64">
         <div className='mx-auto max-w-[1440px] px-6 lg:px-20 flex flex-col items-center bg-white py-2 ring-1 rounded-lg'>
@@ -59,7 +54,11 @@ const Admin = () => {
           <Route path="/allevent" element={<Allevent events={events} />} />
           <Route path="/addevent" element={<Addevent />} />
           <Route path="/add-tickets/:eventId" element={<AddTickets />} />
-          <Route path="/" element={<h2 className="text-2xl font-bold mb-4">Bienvenue dans le tableau de bord de l'admin</h2>} />
+          <Route path="/" element={<div className='flex items-center justify-center min-h-screen bg-gray-100'>
+            <h2 className="text-2xl font-bold">
+              Bienvenue dans le tableau de bord de l'admin
+            </h2>
+          </div>} />
           <Route path="/event/:id" element={<EventDetails events={events} onUpdate={handleUpdate} />} />
         </Routes>
       </div>

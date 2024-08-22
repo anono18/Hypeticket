@@ -2,15 +2,15 @@ import React, { useState } from 'react';
 
 const Login = () => {
   const [state, setState] = useState("Login");
-  const [formData, setformData] = useState({
-    firstname: '', // Ajout du champ firstName
+  const [formData, setFormData] = useState({
+    firstname: '',
     username: '',
     password: '',
     email: '',
   });
 
-  const changeHandler = async (e) => {
-    setformData({ ...formData, [e.target.name]: e.target.value });
+  const changeHandler = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const login = async () => {
@@ -19,7 +19,7 @@ const Login = () => {
     await fetch('http://localhost:4000/login', {
       method: "POST",
       headers: {
-        Accept: 'application/formData',
+        Accept: 'application/json',
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(formData),
@@ -41,7 +41,7 @@ const Login = () => {
     await fetch('http://localhost:4000/signup', {
       method: "POST",
       headers: {
-        Accept: 'application/formData',
+        Accept: 'application/json',
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(formData),
@@ -58,79 +58,63 @@ const Login = () => {
   };
 
   return (
-    <section className='max-padd-container flexCenter flex-col pt-32 bg-primary ' >
-      <div className='w-full max-w[666px] h-[600px] bg-primary m-auto px-14 py-10 rounded-md'>
-        <h3 className='h3 text-center text-secondary font-bold underline'>{state}</h3>
-        <div className='flex flex-col gap-4 mt-7'>
-          {state === "Sign Up" ? (
+    <section className='login-container'>
+      <div className='login-box'>
+        <h3 className='login-header underline'>{state}</h3>
+        <div className='login-form'>
+          {state === "Sign Up" && (
             <>
               <input
                 name='firstname'
                 type='text'
                 value={formData.firstname}
                 onChange={changeHandler}
-                placeholder='Your First Name'
-                className='h-8 w-full pl-5 bg-white outline-none rounded-xl text-sm'
+                placeholder='Votre prénom'
+                className='login-input'
               />
               <input
                 name='username'
                 type='text'
                 value={formData.username}
                 onChange={changeHandler}
-                placeholder='Your Username'
-                className='h-8 w-full pl-5 bg-white outline-none rounded-xl text-sm'
+                placeholder='Votre nom d’utilisateur'
+                className='login-input'
               />
             </>
-          ) : ""}
+          )}
           <input
             name='email'
+            type='email'
             value={formData.email}
             onChange={changeHandler}
-            type='email'
-            placeholder='Your Email'
-            className='h-8 w-full pl-5 bg-white outline-none rounded-xl text-sm'
+            placeholder='Votre email'
+            className='login-input'
           />
           <input
             name='password'
             type='password'
             value={formData.password}
             onChange={changeHandler}
-            placeholder='Password'
-            className='h-8 w-full pl-5 bg-white outline-none rounded-xl text-sm'
+            placeholder='Mot de passe'
+            className='login-input'
           />
         </div>
-        <div className='flex justify-center'>
-          <button
-            onClick={() => (state === "Login" ? login() : signup())}
-            className='btn-dark rounded-xl my-5 !py-1 hover:bg-secondary '
-          >
-            Continue
+        <div className="shimmer-button-container mt-4">
+          <button onClick={() => (state === "Login" ? login() : signup())} className="shimmer-button">
+            <span className="whitespace-pre-wrap text-center text-sm font-medium leading-none tracking-tight lg:text-lg">
+              Continuer
+            </span>
           </button>
         </div>
-        {state === "Sign Up" ? (
-          <p className='text-black font-bold text-center'>
-            Already have an Account{" "}
-            <span
-              onClick={() => { setState("Login"); }}
-              className='text-secondary underline cursor-pointer'
-            >
-              Login
-            </span>
-          </p>
-        ) : (
-          <p className='text-black font-bold text-center'>
-            Create an Account?{" "}
-            <span
-              onClick={() => { setState("Sign Up"); }}
-              className='text-secondary underline cursor-pointer'
-            >
-              Click here
-            </span>
-          </p>
-        )}
-        <div className='flex justify-center items-center mt-6 gap-3 '>
-          <input type="checkbox" name='' id='' />
-          <p>By continuing, I agree to the terms of use & privacy policy.</p>
+        <p className='toggle-link'>
+          {state === "Sign Up" ? (
+            <>Déjà un compte? <span onClick={() => setState("Login")}>Connexion</span></>
+          ) : (
+            <>Créer un compte? <span onClick={() => setState("Sign Up")}>Cliquez ici</span></>
+          )}
+        </p>
+        <div className='terms-container'>
+          <label htmlFor="terms">En continuant, j’accepte les conditions d’utilisation et la politique de confidentialité.</label>
         </div>
       </div>
     </section>
