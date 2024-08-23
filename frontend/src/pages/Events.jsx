@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import EventHd from '../components/EventHd';
+// import EventHd from '../components/EventHd';
 import EventDescription from '../components/EventDescription';
 import EventDisplay from '../components/EventDisplay';
 import Header from '../components/Header';
@@ -21,7 +21,7 @@ export const Product = () => {
       })
       .catch((error) => {
         console.error('Error fetching events:', error);
-        
+
       });
   }, []);
 
@@ -29,7 +29,7 @@ export const Product = () => {
 
 
   if (isLoading) {
-    return  
+    return
     (
       <div className="loader">...</div>
     );
@@ -41,9 +41,9 @@ export const Product = () => {
 
   return (
     <section>
-        <Header />
-        <EventDisplay event={event} />
-        <EventDescription event={event} /><br /> <br />
+      <Header />
+      <EventDisplay event={event} />
+      <EventDescription event={event} /><br /> <br />
       <Footer />
     </section>
   );

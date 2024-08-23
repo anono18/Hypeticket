@@ -7,6 +7,11 @@ const path = require("path");
 const cors = require("cors");
 const nodemailer = require("nodemailer");
 const app = express();
+const axios = require('axios');
+const QRCode = require('qrcode');
+const PDFDocument = require('pdfkit');
+const fs = require('fs');
+
 
 app.use(cors());
 app.use(express.json());
@@ -39,30 +44,7 @@ app.post("/upload", upload.single('product'), (req, res) => {
 
 
 
-const Ticket = mongoose.model("tickets", {
-    type: {
-        type: String,
-        required: true
-    },
-    price: {
-        type: Number,
-        required: true
-    },
-    availability: {
-        type: Number,
-        required: true
-    },
-    event: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'events',
-        required: true
-    },
-    user: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
 
-    }
-});
 
 //***************************************************tous concernant les evnements*********************************************
 
@@ -194,7 +176,6 @@ app.get('/events/:id/reserveCount', async (req, res) => {
 
 
 
-
 // Route PUT pour mettre à jour un événement
 // /api/events/:id
 app.put('/events/:id', async (req, res) => {
@@ -214,6 +195,145 @@ app.put('/events/:id', async (req, res) => {
     }
 });
 
+
+
+
+
+
+
+
+
+
+//********************************************tous concernant les utilisateur ********************************************
+
+// Schéma pour les utilisateurs
+const User = mongoose.model('User', {
+    firstname: {
+        type: String,
+        required: false,
+    },
+    name: {
+        type: String,
+    },
+    email: {
+        type: String,
+        unique: true,
+    },
+    password: {
+        type: String,
+        required: true,
+    },
+    ticketData: [{
+        ticketId: {
+            type: mongoose.Schema.Types.Array,
+            ref: 'Ticket',
+        },
+    }],
+    paymentMethod: {
+        type: String,
+        required: false,
+    },
+    phoneNumber: {
+        type: String,
+        required: false,
+    }
+
+});
+
+
+
+// Endpoint pour enregistrer un nouvel utilisateur
+app.post('/signup', async (req, res) => {
+    let check = await User.findOne({ email: req.body.email });
+    if (check) {
+        return res.status(400).json({
+            success: false,
+            error: 'Un utilisateur avec cet email existe déjà',
+        });
+    }
+    const user = new User({
+        firstname: req.body.firstname,
+        name: req.body.name,
+        email: req.body.email,
+        password: req.body.password,
+        ticketData: {}, // Initialise ticketData comme un objet vide
+    });
+
+    await user.save();
+    const data = {
+        user: {
+            id: user.id,
+        },
+    };
+    const token = jwt.sign(data, "secret_ecom");
+    res.json({ success: true, token });
+});
+
+
+// Endpoint pour le login de l'utilisateur
+app.post('/login', async (req, res) => {
+    let user = await User.findOne({ email: req.body.email });
+    if (user) {
+        const passMatch = req.body.password === user.password;
+        if (passMatch) {
+            const data = {
+                user: {
+                    id: user.id,
+                },
+            };
+            const token = jwt.sign(data, "secret_ecom");
+            res.json({ success: true, token });
+        } else {
+            res.json({ success: false, error: "Mot de passe incorrect" });
+        }
+    } else {
+        res.json({ success: false, error: "Adresse email incorrecte" });
+    }
+});
+
+
+// le middleware de verification de connection
+const fetchUser = async (req, res, next) => {
+    const token = req.header('auth-token');
+    if (!token) {
+        return res.status(401).send({ errors: 'Please authenticate using a valid login' });
+    }
+
+    try {
+        const data = jwt.verify(token, 'secret_ecom');
+        req.user = data.user;
+        next();
+    } catch (error) {
+        res.status(401).send({ errors: 'Please authenticate using a valid token' });
+    }
+};
+
+//**************************************************************tout concernant les ticket ******************************************************
+
+const Ticket = mongoose.model("tickets", {
+    type: {
+        type: String,
+        required: true
+    },
+    price: {
+        type: Number,
+        required: true
+    },
+    availability: {
+        type: Number,
+        required: true
+    },
+    event: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'events',
+        required: true
+    },
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+
+    }
+});
 
 
 // Ajouter des tickets à un événement
@@ -269,38 +389,80 @@ app.get('/rev', async (req, res) => {
 
 
 
+//endpoint pour reccuper le nombre de ticket restant
+// app.get('/event/:eventId/tickets', async (req, res) => {
+//     try {
+//         const { eventId } = req.params;
+
+//         // Rechercher les tickets par ID d'événement
+//         const tickets = await Ticket.find({ eventId });
+
+//         if (!tickets.length) {
+//             return res.status(404).json({ message: 'Aucun ticket trouvé pour cet événement.' });
+//         }
+
+//         // Organiser les tickets par type et calculer la disponibilité totale
+//         const ticketDetails = tickets.reduce((acc, ticket) => {
+//             if (!acc[ticket.type]) {
+//                 acc[ticket.type] = 0;
+//             }
+//             acc[ticket.type] += ticket.availability;
+//             return acc;
+//         }, {});
+
+//         res.json(ticketDetails);
+//     } catch (error) {
+//         res.status(500).json({ message: 'Erreur lors de la récupération des tickets.', error });
+//     }
+// });
+
+// Obtenir la disponibilité des tickets par ID d'événement
+// app.get('/event/:eventId/tickets', async (req, res) => {
+//     try {
+//         const tickets = await Ticket.find({ eventId: req.params.eventId });
+
+//         if (!tickets.length) {
+//             return res.status(404).send({ error: 'Aucun ticket trouvé pour cet événement' });
+//         }
+
+//         const ticketAvailability = tickets.reduce((acc, ticket) => {
+//             acc[ticket.type] = ticket.availability;
+//             return acc;
+//         }, {});
+
+//         res.status(200).json(ticketAvailability);
+//     } catch (error) {
+//         console.error('Erreur lors de la récupération des tickets:', error.message);
+//         res.status(500).send('Erreur serveur');
+//     }
+// });
 
 
 
+app.get('/event/:eventId/tickets', async (req, res) => {
+    try {
+        const eventId = req.params.eventId;
+        const tickets = await Ticket.find({ eventId });
 
+        if (!tickets || tickets.length === 0) {
+            return res.status(404).send({ error: 'Aucun ticket trouvé pour cet événement' });
+        }
 
-//********************************************tous concernant les utilisateur ********************************************
+        const ticketDetails = tickets.reduce((acc, ticket) => {
+            acc[ticket.type] = ticket.availability;
+            return acc;
+        }, {});
 
-// Schéma pour les utilisateurs
-const User = mongoose.model('User', {
-    firstname: {
-        type: String,
-        required: false,
-    },
-    name: {
-        type: String,
-    },
-    email: {
-        type: String,
-        unique: true,
-    },
-    password: {
-        type: String,
-        required: true,
-    },
-    ticketData: [{
-        ticketId: {
-            type: mongoose.Schema.Types.Array,
-            ref: 'Ticket',
-        },
-    }],
-
+        res.status(200).json(ticketDetails);
+    } catch (error) {
+        console.error('Erreur lors de la récupération des tickets:', error.message);
+        res.status(500).send('Erreur du serveur');
+    }
 });
+
+
+
+//*******************************************************************RESERVATION******************************************************
 
 const Reservation = mongoose.model('reservation', {
     user: {
@@ -316,77 +478,6 @@ const Reservation = mongoose.model('reservation', {
         required: true,
     },
 });
-
-// Endpoint pour enregistrer un nouvel utilisateur
-app.post('/signup', async (req, res) => {
-    let check = await User.findOne({ email: req.body.email });
-    if (check) {
-        return res.status(400).json({
-            success: false,
-            error: 'Un utilisateur avec cet email existe déjà',
-        });
-    }
-    const user = new User({
-        firstname: req.body.firstname,
-        name: req.body.name,
-        email: req.body.email,
-        password: req.body.password,
-        ticketData: {}, // Initialise ticketData comme un objet vide
-    });
-
-    await user.save();
-    const data = {
-        user: {
-            id: user.id,
-        },
-    };
-    const token = jwt.sign(data, "secret_ecom");
-    res.json({ success: true, token });
-});
-
-
-// Endpoint pour le login de l'utilisateur
-app.post('/login', async (req, res) => {
-    let user = await User.findOne({ email: req.body.email });
-    if (user) {
-        const passMatch = req.body.password === user.password;
-        if (passMatch) {
-            const data = {
-                user: {
-                    id: user.id,
-                },
-            };
-            const token = jwt.sign(data, "secret_ecom");
-            res.json({ success: true, token });
-        } else {
-            res.json({ success: false, error: "Mot de passe incorrect" });
-        }
-    } else {
-        res.json({ success: false, error: "Adresse email incorrecte" });
-    }
-});
-
-
-
-
-
-
-
-// le middleware de verification de connection
-const fetchUser = async (req, res, next) => {
-    const token = req.header('auth-token');
-    if (!token) {
-        return res.status(401).send({ errors: 'Please authenticate using a valid login' });
-    }
-
-    try {
-        const data = jwt.verify(token, 'secret_ecom');
-        req.user = data.user;
-        next();
-    } catch (error) {
-        res.status(401).send({ errors: 'Please authenticate using a valid token' });
-    }
-};
 
 
 
@@ -481,13 +572,10 @@ app.get('/myreservations', fetchUser, async (req, res) => {
 app.delete('/reservations/:id', async (req, res) => {
     try {
         const reservationId = req.params.id;
-
         const deletedReservation = await Reservation.findByIdAndDelete(reservationId);
-
         if (!deletedReservation) {
             return res.status(404).json({ message: 'Reservation not found' });
         }
-
         res.status(200).json({ message: 'Reservation deleted successfully' });
     } catch (error) {
         res.status(500).json({ message: 'Error deleting reservation', error: error.message });
@@ -495,37 +583,260 @@ app.delete('/reservations/:id', async (req, res) => {
 });
 
 
-//endpoint pour reccuper le nombre de ticket restant
-app.get('/event/:eventId/tickets', async (req, res) => {
+
+
+
+
+//*************************************************************Endpoint pour le payement***********************************
+
+
+
+// app.post('/simulate-payment', fetchUser, async (req, res) => {
+//     const { eventId, ticketDetails, securityCode, paymentMethod, phoneNumber } = req.body;
+
+//     // Vérifiez que l'utilisateur est authentifié
+//     if (!req.user) {
+//         return res.status(401).json({ message: 'User not authenticated' });
+//     }
+
+//     try {
+//         // Récupérez les détails de l'événement
+//         const event = await Event.findById(eventId);
+//         if (!event) {
+//             return res.status(404).json({ message: 'Event not found' });
+//         }
+
+//         // Récupérez les tickets de l'événement
+//         const tickets = await Ticket.find({ event: eventId });
+//         if (!tickets.length) {
+//             return res.status(404).json({ message: 'No tickets found for this event' });
+//         }
+
+//         // Calculer le prix total
+//         let totalPrice = 0;
+//         for (const detail of ticketDetails) {
+//             const ticket = tickets.find(ticket => ticket._id.toString() === detail.ticketId);
+//             if (ticket) {
+//                 totalPrice += ticket.price * detail.quantity;
+//             } else {
+//                 return res.status(404).json({ message: `Ticket with ID ${detail.ticketId} not found` });
+//             }
+//         }
+
+//         // Vérification du montant
+//         if (req.body.amount !== totalPrice) {
+//             return res.status(400).json({ message: 'Amount does not match the total price for the quantity of tickets' });
+//         }
+
+//         // Vérification du code de sécurité
+//         if (securityCode !== '1234') {
+//             return res.status(400).json({ message: 'Invalid security code' });
+//         }
+
+//         // Vérification du numéro de téléphone en fonction du moyen de paiement
+//         const isTMoney = ['90', '91', '92', '93', '70', '71'].some(prefix => phoneNumber.startsWith(prefix));
+//         const isFlooz = ['96', '97', '98', '99', '79'].some(prefix => phoneNumber.startsWith(prefix));
+
+//         if (paymentMethod === 'TMoney' && !isTMoney) {
+//             return res.status(400).json({ message: 'Invalid phone number for TMoney' });
+//         } else if (paymentMethod === 'Flooz' && !isFlooz) {
+//             return res.status(400).json({ message: 'Invalid phone number for Flooz' });
+//         }
+
+//         // Générer le QR code
+//         const qrCodeData = `Event Ticket - Event ID: ${eventId} - Phone: ${phoneNumber} - Amount: ${totalPrice} - Ticket Details: ${JSON.stringify(ticketDetails)}`;
+//         const qrCode = await generateQRCode(qrCodeData);
+
+//         // Envoyer le QR code par e-mail ou SMS
+//         await sendQRCodeToLink(phoneNumber, qrCode);
+
+//         res.json({ message: 'Payment successful! QR code has been sent.' });
+//     } catch (error) {
+//         console.error('Error processing payment:', error);
+//         res.status(500).json({ message: 'Internal server error' });
+//     }
+// });
+
+// async function generateQRCode(data) {
+//     const QRCode = require('qrcode');
+//     return await QRCode.toDataURL(data);
+// }
+
+
+// async function sendQRCodeToLink(phoneNumber, qrCode) {
+//     const url = `http://wha.me/${phoneNumber}`;
+    
+//     try {
+//         const response = await axios.post(url, {
+//             qrCode: qrCode
+//         });
+//         console.log('Réponse après l’envoi du QR code :', response.data);
+//     } catch (error) {
+//         console.error('Erreur lors de l’envoi du QR code :', error);
+//     }
+// }
+
+
+app.post('/simulate-payment', fetchUser, async (req, res) => {
+    const { eventId, ticketDetails, securityCode, paymentMethod, phoneNumber } = req.body;
+
+    if (!req.user) {
+        return res.status(401).json({ message: 'User not authenticated' });
+    }
+
     try {
-        const { eventId } = req.params;
-
-        // Rechercher les tickets par ID d'événement
-        const tickets = await Ticket.find({ eventId });
-
-        if (!tickets.length) {
-            return res.status(404).json({ message: 'Aucun ticket trouvé pour cet événement.' });
+        const event = await Event.findById(eventId);
+        if (!event) {
+            return res.status(404).json({ message: 'Event not found' });
         }
 
-        // Organiser les tickets par type et calculer la disponibilité totale
-        const ticketDetails = tickets.reduce((acc, ticket) => {
-            if (!acc[ticket.type]) {
-                acc[ticket.type] = 0;
-            }
-            acc[ticket.type] += ticket.availability;
-            return acc;
-        }, {});
+        const tickets = await Ticket.find({ event: eventId });
+        if (!tickets.length) {
+            return res.status(404).json({ message: 'No tickets found for this event' });
+        }
 
-        res.json(ticketDetails);
+        let totalPrice = 0;
+        for (const detail of ticketDetails) {
+            const ticket = tickets.find(ticket => ticket._id.toString() === detail.ticketId);
+            if (ticket) {
+                totalPrice += ticket.price * detail.quantity;
+            } else {
+                return res.status(404).json({ message: `Ticket with ID ${detail.ticketId} not found` });
+            }
+        }
+
+        if (req.body.amount !== totalPrice) {
+            return res.status(400).json({ message: 'Amount does not match the total price for the quantity of tickets' });
+        }
+
+        if (securityCode !== '1234') {
+            return res.status(400).json({ message: 'Invalid security code' });
+        }
+
+        const isTMoney = ['90', '91', '92', '93', '70', '71'].some(prefix => phoneNumber.startsWith(prefix));
+        const isFlooz = ['96', '97', '98', '99', '79'].some(prefix => phoneNumber.startsWith(prefix));
+
+        if (paymentMethod === 'TMoney' && !isTMoney) {
+            return res.status(400).json({ message: 'Invalid phone number for TMoney' });
+        } else if (paymentMethod === 'Flooz' && !isFlooz) {
+            return res.status(400).json({ message: 'Invalid phone number for Flooz' });
+        }
+
+        const qrCodeData = `Event Ticket - Event ID: ${eventId} - Phone: ${phoneNumber} - Amount: ${totalPrice} - Ticket Details: ${JSON.stringify(ticketDetails)}`;
+        const qrCode = await generateQRCode(qrCodeData);
+
+        // Récupérer l'adresse e-mail de l'utilisateur
+        const user = await User.findById(req.user.id);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        await sendQRCodeByEmail(user.email, qrCode);
+
+        res.json({ message: 'Payment successful! QR code has been sent.' });
     } catch (error) {
-        res.status(500).json({ message: 'Erreur lors de la récupération des tickets.', error });
+        console.error('Error processing payment:', error);
+        res.status(500).json({ message: 'Internal server error' });
     }
 });
 
+async function generateQRCode(data) {
+    try {
+        // Générer le QR code en format base64
+        const qrCode = await QRCode.toDataURL(data);
+        return qrCode;
+    } catch (error) {
+        console.error('Erreur lors de la génération du QR code :', error);
+        throw error;
+    }
+}
+
+async function createPDFWithQRCode(qrCodeData, outputPath) {
+    try {
+        const qrCode = await generateQRCode(qrCodeData);
+
+        // Créer un nouveau document PDF
+        const doc = new PDFDocument();
+        doc.pipe(fs.createWriteStream(outputPath));
+
+        // Ajouter du texte
+        doc.fontSize(12).text('Merci pour votre achat ! Voici votre QR code :', {
+            align: 'center'
+        });
+
+        // Convertir l'image du QR code en buffer et ajouter au PDF
+        const qrCodeBuffer = Buffer.from(qrCode.split(',')[1], 'base64');
+        doc.image(qrCodeBuffer, {
+            fit: [250, 250],
+            align: 'center',
+            valign: 'center'
+        });
+
+        // Finaliser le PDF
+        doc.end();
+        console.log('PDF créé avec succès !');
+    } catch (error) {
+        console.error('Erreur lors de la création du PDF :', error);
+    }
+}
+
+async function sendQRCodeByEmail(email, pdfPath) {
+    // Configurer le transporteur Nodemailer
+    const transporter = nodemailer.createTransport({
+        service: 'gmail', // Utilisez le service de votre choix
+        auth: {
+            user: 'adododjialban@gmail.com',
+            pass: 'hulx sonc faua wwgd' // Remplacez par le mot de passe de l'adresse e-mail
+        }
+    });
+
+    // Définir les options du mail
+    const mailOptions = {
+        from: 'adododjialban@gmail.com',
+        to: email,
+        subject: 'Votre QR Code de Billet',
+        // html: `<p>Merci pour votre achat ! Voici votre QR code :</p><img src="${qrCode}" alt="QR Code" />`,
+        text: 'Merci pour votre achat ! Veuillez trouver votre QR code en pièce jointe.',
+        attachments: [
+            {
+                filename: 'ticket.pdf',
+                path: pdfPath
+            }
+        ]
+    };
+
+    try {
+        // Envoyer l'e-mail
+        await transporter.sendMail(mailOptions);
+        console.log('QR code envoyé avec succès à', email);
+    } catch (error) {
+        console.error('Erreur lors de l’envoi du QR code :', error);
+    }
+}
 
 
 
-//*********************************************************endpoint pour faire l'email****************************************
+
+
+
+
+
+//***************************************************************Endpoint pour la recherche*******************************
+app.post('/searchevents', async (req, res) => {
+    let { searchTerm } = req.body;
+    let events = await Event.find({
+        $or: [
+            { name: { $regex: searchTerm, $options: 'i' } },
+            { organizer: { $regex: searchTerm, $options: 'i' } },
+            { lieu: { $regex: searchTerm, $options: 'i' } },
+            { category: { $regex: searchTerm, $options: 'i' } }
+        ]
+    });
+    res.json(events);
+});
+
+
+//********************************************************endpoint pour faire l'envoie de message****************************************
 app.post('/send-email', async (req, res) => {
     const { name, email, subject, message } = req.body;
 
@@ -553,20 +864,6 @@ app.post('/send-email', async (req, res) => {
     }
 });
 
-
-//***************************************************************Endpoint pour la recherche*******************************
-app.post('/searchevents', async (req, res) => {
-    let { searchTerm } = req.body;
-    let events = await Event.find({
-        $or: [
-            { name: { $regex: searchTerm, $options: 'i' } },
-            { organizer: { $regex: searchTerm, $options: 'i' } },
-            { lieu: { $regex: searchTerm, $options: 'i' } },
-            { category: { $regex: searchTerm, $options: 'i' } }
-        ]
-    });
-    res.json(events);
-});
 
 // Start server
 app.listen(port, (error) => {

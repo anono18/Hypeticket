@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 
 const ListeTicket = () => {
@@ -51,9 +51,10 @@ const ListeTicket = () => {
     fetchTickets();
   }, []);
 
-  const handlePay = (ticketId) => {
-    navigate(`/event/${ticketId}/pay`);
+  const handlePay = (eventId) => {
+    navigate(`/event/${eventId}`);
   };
+  
 
   const onCancel = async (ticketId) => {
     if (window.confirm(`Voulez-vous vraiment annuler le ticket ${ticketId} ?`)) {
@@ -126,12 +127,15 @@ const ListeTicket = () => {
                 >
                   ❌
                 </button>
+                <Link to={`/Event/${id}`} className=''>
+                  
+                </Link>
                 <button
-                  onClick={() => handlePay(ticket.id)}
-                  className="pay-button"
-                >
-                  ✔️
-                </button>
+                    onClick={() => handlePay(ticket.id)}
+                    className="pay-button"
+                  >
+                    ✔️
+                  </button>
               </td>
             </tr>
           ))}
