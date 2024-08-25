@@ -4,6 +4,7 @@ import { Link, NavLink } from "react-router-dom";
 import Navbar from "./Navbar"
 import { MdMenu, MdClose } from "react-icons/md";
 import { FaArrowRight } from "react-icons/fa";
+import logo from "../assets/logo.png"
 
 const Header = () => {
     const [menuOpened, setMenuOpened] = useState(false);
@@ -30,7 +31,13 @@ const Header = () => {
         <header className="max-padd-container w-full z-50 bg-blue-950 ">
             <div className="flexBetween py-3">
                 <Link to="/" className="flex items-center gap-x-2">
-                    <span className="bold-24  xs:flex "><span className="text-secondary text-2xl">HYPE</span><span className="text-white">-</span><span className="text-secondary text-2xl">TICKETS</span></span>
+                    <span className="logo-text">
+                        <span className="text-secondary">Hype</span>
+                        <span className="text-secondary">-</span>
+                        <span className="text-secondary">ticket</span>
+                    </span>
+                    {/* <img src={logo} alt="logo" className="w-48 h-auto m-2 rounded-lg shadow-xl mx-auto object-cover" /> */}
+                    {/* <span className="bold-24  xs:flex "><span className="text-secondary text-2xl">HYPE</span><span className="text-white">-</span><span className="text-secondary text-2xl">TICKETS</span></span> */}
                 </Link>
                 {/** Navbar et bouton */}
                 <div className="flexCenter gap-x-4 ">
@@ -48,13 +55,13 @@ const Header = () => {
                             <MdClose className='xl:hidden cursor-pointer text-3xl text-white hover:text-secondary' onClick={toggleMenu} />
                         )}
                         <div className="flexBetween sm:gap-x-0 ">
-                            {localStorage.getItem('auth-token') ? 
+                            {localStorage.getItem('auth-token') ?
                                 <NavLink onClick={() => { localStorage.removeItem('auth-token'); window.location.replace('/') }} to={'/login'} className={'btn-secondary flexCenter gap-x-2 medium-16 rounded-xl'}>
                                     Logout <FaArrowRight />
                                 </NavLink> :
-                                    <NavLink to={'/login'} className={'btn-secondary flexCenter gap-x-2 medium-16 rounded-xl'}>
-                                        Login 
-                                    </NavLink>
+                                <NavLink to={'/login'} className={'btn-secondary flexCenter gap-x-2 medium-16 rounded-xl'}>
+                                    Login
+                                </NavLink>
                             }
                         </div>
                     </div>

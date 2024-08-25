@@ -4,6 +4,47 @@
 
 
 
+@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap');
+
+.logo-text {
+    /* font-family: 'Dancing Script', cursive; */
+    font-family: 'Arial', sans-serif;
+    font-style: italic;
+
+    color: #ec8b43; /* Couleur orange similaire à l'image */
+    font-size: 2.5rem; /* Ajuster selon vos préférences */
+    /* font-weight: bold; */
+    display: flex;
+    align-items: center;
+    font-variant: small-caps;
+
+}
+
+.text-secondary {
+    color: #ec8b43; /* Couleur orange pour les mots "Hype" et "ticket" */
+}
+
+.text-white {
+    color: #ffffff; /* Couleur blanche pour le "-" */
+}
+
+
+
+
+
+/* Add this to your CSS file */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+
+
+
 .login-container {
   display: flex;
   justify-content: center;

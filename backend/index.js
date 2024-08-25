@@ -8,9 +8,12 @@ const cors = require("cors");
 const nodemailer = require("nodemailer");
 const app = express();
 const axios = require('axios');
-const QRCode = require('qrcode');
+// const QRCode = require('qrcode');
 const PDFDocument = require('pdfkit');
+const qr = require('qr-image');
 const fs = require('fs');
+
+
 
 
 app.use(cors());
@@ -389,54 +392,6 @@ app.get('/rev', async (req, res) => {
 
 
 
-//endpoint pour reccuper le nombre de ticket restant
-// app.get('/event/:eventId/tickets', async (req, res) => {
-//     try {
-//         const { eventId } = req.params;
-
-//         // Rechercher les tickets par ID d'événement
-//         const tickets = await Ticket.find({ eventId });
-
-//         if (!tickets.length) {
-//             return res.status(404).json({ message: 'Aucun ticket trouvé pour cet événement.' });
-//         }
-
-//         // Organiser les tickets par type et calculer la disponibilité totale
-//         const ticketDetails = tickets.reduce((acc, ticket) => {
-//             if (!acc[ticket.type]) {
-//                 acc[ticket.type] = 0;
-//             }
-//             acc[ticket.type] += ticket.availability;
-//             return acc;
-//         }, {});
-
-//         res.json(ticketDetails);
-//     } catch (error) {
-//         res.status(500).json({ message: 'Erreur lors de la récupération des tickets.', error });
-//     }
-// });
-
-// Obtenir la disponibilité des tickets par ID d'événement
-// app.get('/event/:eventId/tickets', async (req, res) => {
-//     try {
-//         const tickets = await Ticket.find({ eventId: req.params.eventId });
-
-//         if (!tickets.length) {
-//             return res.status(404).send({ error: 'Aucun ticket trouvé pour cet événement' });
-//         }
-
-//         const ticketAvailability = tickets.reduce((acc, ticket) => {
-//             acc[ticket.type] = ticket.availability;
-//             return acc;
-//         }, {});
-
-//         res.status(200).json(ticketAvailability);
-//     } catch (error) {
-//         console.error('Erreur lors de la récupération des tickets:', error.message);
-//         res.status(500).send('Erreur serveur');
-//     }
-// });
-
 
 
 app.get('/event/:eventId/tickets', async (req, res) => {
@@ -590,92 +545,70 @@ app.delete('/reservations/:id', async (req, res) => {
 //*************************************************************Endpoint pour le payement***********************************
 
 
+async function generateQRCode(data) {
+    try {
+        // Générer le QR code en format PNG
+        return qr.imageSync(data, { type: 'png' });
+    } catch (error) {
+        console.error('Erreur lors de la génération du QR code :', error);
+        throw error;
+    }
+}
 
-// app.post('/simulate-payment', fetchUser, async (req, res) => {
-//     const { eventId, ticketDetails, securityCode, paymentMethod, phoneNumber } = req.body;
+async function createPDFWithQRCode(qrCodeBuffer, outputPath) {
+    try {
+        const doc = new PDFDocument();
+        doc.pipe(fs.createWriteStream(outputPath));
 
-//     // Vérifiez que l'utilisateur est authentifié
-//     if (!req.user) {
-//         return res.status(401).json({ message: 'User not authenticated' });
-//     }
+        doc.fontSize(12).text('Merci pour votre achat ! Voici votre QR code :', {
+            align: 'center'
+        });
 
-//     try {
-//         // Récupérez les détails de l'événement
-//         const event = await Event.findById(eventId);
-//         if (!event) {
-//             return res.status(404).json({ message: 'Event not found' });
-//         }
+        // Ajouter le QR code au PDF
+        doc.image(qrCodeBuffer, {
+            fit: [250, 250],
+            align: 'center',
+            valign: 'center'
+        });
 
-//         // Récupérez les tickets de l'événement
-//         const tickets = await Ticket.find({ event: eventId });
-//         if (!tickets.length) {
-//             return res.status(404).json({ message: 'No tickets found for this event' });
-//         }
+        doc.end();
+        console.log('PDF créé avec succès !');
+    } catch (error) {
+        console.error('Erreur lors de la création du PDF :', error);
+        throw error;
+    }
+}
 
-//         // Calculer le prix total
-//         let totalPrice = 0;
-//         for (const detail of ticketDetails) {
-//             const ticket = tickets.find(ticket => ticket._id.toString() === detail.ticketId);
-//             if (ticket) {
-//                 totalPrice += ticket.price * detail.quantity;
-//             } else {
-//                 return res.status(404).json({ message: `Ticket with ID ${detail.ticketId} not found` });
-//             }
-//         }
+async function sendQRCodeByEmail(email, pdfPath) {
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: 'adododjialban@gmail.com',
+            pass: 'hulx sonc faua wwgd'
+        }
+    });
 
-//         // Vérification du montant
-//         if (req.body.amount !== totalPrice) {
-//             return res.status(400).json({ message: 'Amount does not match the total price for the quantity of tickets' });
-//         }
+    const mailOptions = {
+        from: 'adododjialban@gmail.com',
+        to: email,
+        subject: 'Votre QR Code de Billet',
+        text: 'Merci pour votre achat ! Veuillez trouver votre QR code en pièce jointe.',
+        attachments: [
+            {
+                filename: 'ticket.pdf',
+                path: pdfPath
+            }
+        ]
+    };
 
-//         // Vérification du code de sécurité
-//         if (securityCode !== '1234') {
-//             return res.status(400).json({ message: 'Invalid security code' });
-//         }
-
-//         // Vérification du numéro de téléphone en fonction du moyen de paiement
-//         const isTMoney = ['90', '91', '92', '93', '70', '71'].some(prefix => phoneNumber.startsWith(prefix));
-//         const isFlooz = ['96', '97', '98', '99', '79'].some(prefix => phoneNumber.startsWith(prefix));
-
-//         if (paymentMethod === 'TMoney' && !isTMoney) {
-//             return res.status(400).json({ message: 'Invalid phone number for TMoney' });
-//         } else if (paymentMethod === 'Flooz' && !isFlooz) {
-//             return res.status(400).json({ message: 'Invalid phone number for Flooz' });
-//         }
-
-//         // Générer le QR code
-//         const qrCodeData = `Event Ticket - Event ID: ${eventId} - Phone: ${phoneNumber} - Amount: ${totalPrice} - Ticket Details: ${JSON.stringify(ticketDetails)}`;
-//         const qrCode = await generateQRCode(qrCodeData);
-
-//         // Envoyer le QR code par e-mail ou SMS
-//         await sendQRCodeToLink(phoneNumber, qrCode);
-
-//         res.json({ message: 'Payment successful! QR code has been sent.' });
-//     } catch (error) {
-//         console.error('Error processing payment:', error);
-//         res.status(500).json({ message: 'Internal server error' });
-//     }
-// });
-
-// async function generateQRCode(data) {
-//     const QRCode = require('qrcode');
-//     return await QRCode.toDataURL(data);
-// }
-
-
-// async function sendQRCodeToLink(phoneNumber, qrCode) {
-//     const url = `http://wha.me/${phoneNumber}`;
-    
-//     try {
-//         const response = await axios.post(url, {
-//             qrCode: qrCode
-//         });
-//         console.log('Réponse après l’envoi du QR code :', response.data);
-//     } catch (error) {
-//         console.error('Erreur lors de l’envoi du QR code :', error);
-//     }
-// }
-
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log('QR code envoyé avec succès à', email);
+    } catch (error) {
+        console.error('Erreur lors de l’envoi du QR code :', error);
+        throw error;
+    }
+}
 
 app.post('/simulate-payment', fetchUser, async (req, res) => {
     const { eventId, ticketDetails, securityCode, paymentMethod, phoneNumber } = req.body;
@@ -723,7 +656,11 @@ app.post('/simulate-payment', fetchUser, async (req, res) => {
         }
 
         const qrCodeData = `Event Ticket - Event ID: ${eventId} - Phone: ${phoneNumber} - Amount: ${totalPrice} - Ticket Details: ${JSON.stringify(ticketDetails)}`;
-        const qrCode = await generateQRCode(qrCodeData);
+        const qrCodeBuffer = await generateQRCode(qrCodeData);
+
+        // Créer le PDF avec le QR code
+        const pdfPath = path.join(__dirname, 'ticket.pdf');
+        await createPDFWithQRCode(qrCodeBuffer, pdfPath);
 
         // Récupérer l'adresse e-mail de l'utilisateur
         const user = await User.findById(req.user.id);
@@ -731,7 +668,8 @@ app.post('/simulate-payment', fetchUser, async (req, res) => {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        await sendQRCodeByEmail(user.email, qrCode);
+        // Envoyer le PDF par e-mail
+        await sendQRCodeByEmail(user.email, pdfPath);
 
         res.json({ message: 'Payment successful! QR code has been sent.' });
     } catch (error) {
@@ -739,81 +677,6 @@ app.post('/simulate-payment', fetchUser, async (req, res) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 });
-
-async function generateQRCode(data) {
-    try {
-        // Générer le QR code en format base64
-        const qrCode = await QRCode.toDataURL(data);
-        return qrCode;
-    } catch (error) {
-        console.error('Erreur lors de la génération du QR code :', error);
-        throw error;
-    }
-}
-
-async function createPDFWithQRCode(qrCodeData, outputPath) {
-    try {
-        const qrCode = await generateQRCode(qrCodeData);
-
-        // Créer un nouveau document PDF
-        const doc = new PDFDocument();
-        doc.pipe(fs.createWriteStream(outputPath));
-
-        // Ajouter du texte
-        doc.fontSize(12).text('Merci pour votre achat ! Voici votre QR code :', {
-            align: 'center'
-        });
-
-        // Convertir l'image du QR code en buffer et ajouter au PDF
-        const qrCodeBuffer = Buffer.from(qrCode.split(',')[1], 'base64');
-        doc.image(qrCodeBuffer, {
-            fit: [250, 250],
-            align: 'center',
-            valign: 'center'
-        });
-
-        // Finaliser le PDF
-        doc.end();
-        console.log('PDF créé avec succès !');
-    } catch (error) {
-        console.error('Erreur lors de la création du PDF :', error);
-    }
-}
-
-async function sendQRCodeByEmail(email, pdfPath) {
-    // Configurer le transporteur Nodemailer
-    const transporter = nodemailer.createTransport({
-        service: 'gmail', // Utilisez le service de votre choix
-        auth: {
-            user: 'adododjialban@gmail.com',
-            pass: 'hulx sonc faua wwgd' // Remplacez par le mot de passe de l'adresse e-mail
-        }
-    });
-
-    // Définir les options du mail
-    const mailOptions = {
-        from: 'adododjialban@gmail.com',
-        to: email,
-        subject: 'Votre QR Code de Billet',
-        // html: `<p>Merci pour votre achat ! Voici votre QR code :</p><img src="${qrCode}" alt="QR Code" />`,
-        text: 'Merci pour votre achat ! Veuillez trouver votre QR code en pièce jointe.',
-        attachments: [
-            {
-                filename: 'ticket.pdf',
-                path: pdfPath
-            }
-        ]
-    };
-
-    try {
-        // Envoyer l'e-mail
-        await transporter.sendMail(mailOptions);
-        console.log('QR code envoyé avec succès à', email);
-    } catch (error) {
-        console.error('Erreur lors de l’envoi du QR code :', error);
-    }
-}
-
 
 
 

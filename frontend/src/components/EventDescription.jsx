@@ -15,6 +15,10 @@
 //     const [amount, setAmount] = useState('');
 //     const [securityCode, setSecurityCode] = useState('');
 //     const [step, setStep] = useState(1);
+//     const [showConfirmation, setShowConfirmation] = useState(false);
+//     const [loading, setLoading] = useState(false);
+
+
 
 //     const handleNextStep = () => {
 //         if (step === 1 && phoneNumber) {
@@ -25,7 +29,6 @@
 //             handlePayment();
 //         }
 //     };
-
 
 //     useEffect(() => {
 //         if (event._id) {
@@ -92,6 +95,7 @@
 //             setShowDialog(true);
 //             return;
 //         }
+//          setLoading(true); // Show loading indicator
 
 //         try {
 //             await axios.post(
@@ -108,12 +112,17 @@
 //             );
 
 //             setDialogMessage('Paiement effectué avec succès ! QR code envoyé.');
-//             setShowDialog(true);
+//             setShowConfirmation(true);
+//             setShowDialog(false);
 //         } catch (error) {
 //             console.error('Erreur lors du paiement:', error);
 //             setDialogMessage('Une erreur est survenue lors du paiement. Veuillez réessayer.');
 //             setShowDialog(true);
 //         }
+//         finally {
+//                         setLoading(false); // Hide loading indicator
+//                         setShowDialog(false);
+//                     }
 //     };
 
 //     const totalPrice = selectedTicket && tickets.length
@@ -236,7 +245,6 @@
 //                                     className='w-full p-2 border border-gray-300 rounded mt-2'
 //                                     value={amount}
 //                                     onChange={(e) => setAmount(e.target.value)}
-//                                     min='0'
 //                                     placeholder='Entrez le montant'
 //                                 />
 //                                 <div className='mt-4 flex justify-end'>
@@ -260,7 +268,13 @@
 //                                     onChange={(e) => setSecurityCode(e.target.value)}
 //                                     placeholder='Entrez le code de sécurité'
 //                                 />
-//                                 <div className='mt-4 flex justify-end gap-2'>
+//                                 <div className='mt-4 flex justify-between'>
+//                                     <button
+//                                         className='bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-blue-700'
+//                                         onClick={() => setShowDialog(false)}
+//                                     >
+//                                         Annuler
+//                                     </button>
 //                                     <button
 //                                         className='bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-700'
 //                                         onClick={handleNextStep}
@@ -268,15 +282,25 @@
 //                                     >
 //                                         Valider
 //                                     </button>
-//                                     <button
-//                                         className='bg-gray-300 text-black px-4 py-2 rounded-lg hover:bg-gray-500'
-//                                         onClick={() => setShowDialog(false)}
-//                                     >
-//                                         Annuler
-//                                     </button>
 //                                 </div>
 //                             </div>
 //                         )}
+//                     </div>
+//                 </div>
+//             )}
+//             {showConfirmation && (
+//                 <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
+//                     <div className='bg-white p-6 rounded-lg shadow-lg max-w-md w-full'>
+//                         <h2 className='text-xl font-bold mb-4'>Paiement réussi !</h2>
+//                         <p className='mb-4'>Merci pour votre achat. Votre QR code vous sera envoyé par email.</p>
+//                         <div className='flex justify-end'>
+//                             <button
+//                                 className='bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-700'
+//                                 onClick={() => setShowConfirmation(false)}
+//                             >
+//                                 OK
+//                             </button>
+//                         </div>
 //                     </div>
 //                 </div>
 //             )}
@@ -285,6 +309,7 @@
 // };
 
 // export default EventDescription;
+
 
 import React, { useState, useEffect } from 'react';
 import flooz from '../assets/flooz.jpg';
@@ -304,6 +329,7 @@ const EventDescription = (props) => {
     const [securityCode, setSecurityCode] = useState('');
     const [step, setStep] = useState(1);
     const [showConfirmation, setShowConfirmation] = useState(false);
+    const [loading, setLoading] = useState(false);
 
     const handleNextStep = () => {
         if (step === 1 && phoneNumber) {
@@ -380,6 +406,7 @@ const EventDescription = (props) => {
             setShowDialog(true);
             return;
         }
+        setLoading(true); // Show loading indicator
 
         try {
             await axios.post(
@@ -397,11 +424,15 @@ const EventDescription = (props) => {
 
             setDialogMessage('Paiement effectué avec succès ! QR code envoyé.');
             setShowConfirmation(true);
-            setShowDialog(false); // Fermer la boîte de dialogue actuelle
+            setShowDialog(false);
         } catch (error) {
             console.error('Erreur lors du paiement:', error);
             setDialogMessage('Une erreur est survenue lors du paiement. Veuillez réessayer.');
             setShowDialog(true);
+        }
+        finally {
+            setLoading(false); // Hide loading indicator
+            setShowDialog(false);
         }
     };
 
@@ -496,72 +527,76 @@ const EventDescription = (props) => {
             {showDialog && (
                 <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
                     <div className='bg-white p-6 rounded-lg shadow-lg max-w-md w-full'>
+                        {loading && (
+                            <div className='flex justify-center items-center'>
+                                <div className='w-12 h-12 border-4 border-blue-500 border-t-transparent border-solid rounded-full animate-spin'></div>
+                            </div>
+                        )}
+                        <h3 className='text-lg font-semibold mb-4'>Paiement</h3>
                         {step === 1 && (
                             <div>
-                                <label className='text-xl text-black'>Numéro de téléphone:</label><br />
-                                <p>vous payez {quantity} tickets</p>
-                                <p>Total: {totalPrice} FCFA</p>
+                                <label className='block mb-2'>Numéro de téléphone:</label>
                                 <input
                                     type='text'
-                                    className='w-full p-2 border border-gray-300 rounded mt-2'
                                     value={phoneNumber}
                                     onChange={(e) => setPhoneNumber(e.target.value)}
-                                    placeholder='Entrez votre numéro'
+                                    className='p-2 border border-gray-300 rounded w-full'
                                 />
-                                <button className='bg-green-500  mt-4 ml-auto rounded-md p-4' onClick={handleNextStep}>
-                                    Suivant
-                                </button>
                             </div>
                         )}
                         {step === 2 && (
                             <div>
-                                <label className='text-xl text-black'>Montant:</label>
-                                <p>vous payez {quantity} tickets</p>
-                                <p>Total: {totalPrice} FCFA</p>
+                                <label className='block mb-2'>Montant: {totalPrice} FCFA</label>
                                 <input
                                     type='number'
-                                    className='w-full p-2 border border-gray-300 rounded mt-2'
                                     value={amount}
                                     onChange={(e) => setAmount(e.target.value)}
-                                    placeholder='Entrez le montant'
+                                    className='p-2 border border-gray-300 rounded w-full'
                                     min='0'
                                 />
-                                <button className='bg-green-500  mt-4 mr-auto rounded-md p-4' onClick={handleNextStep}>
-                                    Suivant
-                                </button>
                             </div>
                         )}
                         {step === 3 && (
                             <div>
-                                <label className='text-xl text-black'>Code de sécurité:</label>
-                                <p>vous payez {quantity} tickets</p>
-                                <p>Total: {totalPrice} FCFA</p>
+                                <label className='block mb-2'>Code de sécurité:</label>
                                 <input
                                     type='text'
-                                    className='w-full p-2 border border-gray-300 rounded mt-2'
                                     value={securityCode}
                                     onChange={(e) => setSecurityCode(e.target.value)}
-                                    placeholder='Entrez le code de sécurité'
+                                    className='p-2 border border-gray-300 rounded w-full'
                                 />
-                                <button className='bg-green-500 mt-4 ml-auto' onClick={handleNextStep}>
-                                    Payer
-                                </button>
                             </div>
                         )}
-                        <button className='btn-primary p-2 rounded-lg hover:bg-red-300 mt-4' onClick={() => setShowDialog(false)}>
-                            Annuler
-                        </button>
+                        <div className='flex justify-end gap-2 mt-4'>
+                            <button
+                                className='bg-green-500 text-white px-4 py-2 rounded'
+                                onClick={handleNextStep}
+                            >
+                                {step === 3 ? 'Valider' : 'Suivant'}
+                            </button>
+                            <button
+                                className='bg-gray-500 text-white px-4 py-2 rounded'
+                                onClick={() => setShowDialog(false)}
+                            >
+                                Annuler
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
             {showConfirmation && (
                 <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
                     <div className='bg-white p-6 rounded-lg shadow-lg max-w-md w-full'>
-                        <p className='text-xl text-black mb-4'>Votre paiement a été effectué avec succès !</p>
-                        <p className='text-sm text-gray-600 mb-4'>Votre ticket sera envoyé à votre adresse e-mail.</p>
-                        <button className='bg-green-500 ml-auto' onClick={() => setShowConfirmation(false)}>
-                            OK
-                        </button>
+                        <h3 className='text-lg font-semibold mb-4'>Confirmation</h3>
+                        <p>Votre paiement a été effectué avec succès ! Vous recevrez un QR code par e-mail.</p>
+                        <div className='flex justify-end gap-2 mt-4'>
+                            <button
+                                className='bg-green-500 text-white px-4 py-2 rounded'
+                                onClick={() => setShowConfirmation(false)}
+                            >
+                                OK
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
@@ -570,4 +605,3 @@ const EventDescription = (props) => {
 };
 
 export default EventDescription;
-

@@ -6,6 +6,7 @@ import Sidebar from '../components/Sidebar';
 import EventDetails from '../pages/EventDetails';
 import axios from 'axios';
 import AddTickets from '../components/AddTickets ';
+import logo from "../assets/logo.png"
 
 const Admin = () => {
   const [events, setEvents] = useState([]);
@@ -56,8 +57,10 @@ const Admin = () => {
           <Route path="/add-tickets/:eventId" element={<AddTickets />} />
           <Route path="/" element={<div className='flex items-center justify-center min-h-screen bg-gray-100'>
             <h2 className="text-2xl font-bold">
-              Bienvenue dans le tableau de bord de l'admin
+              Bienvenue dans le tableau de bord de l'admin de
             </h2>
+            <img src={logo} alt="logo" className="w-80 h-64 rounded-lg shadow-xl mx-auto object-cover" />
+
           </div>} />
           <Route path="/event/:id" element={<EventDetails events={events} onUpdate={handleUpdate} />} />
         </Routes>
