@@ -5,7 +5,7 @@ const EventDisplay = (props) => {
 
     return (
         <section className='w-full h-[80vh] flex justify-center items-center'>
-            <div className='relative w-full h-full flex justify-center items-center'>
+            <div className='relative w-full h-full flex justify-center items-center mt-4'>
                 <img 
                     src={event.image} 
                     alt="bigImg" 

@@ -4,9 +4,9 @@ const Login = () => {
   const [state, setState] = useState("Login");
   const [formData, setFormData] = useState({
     firstname: '',
-    username: '',
-    password: '',
+    name: '',
     email: '',
+    password: '',
   });
 
   const changeHandler = (e) => {
@@ -14,7 +14,12 @@ const Login = () => {
   };
 
   const login = async () => {
-    console.log("login function executed", formData);
+    const { email, password } = formData;
+    if (!email || !password) {
+      alert('Veuillez remplir tous les champs.');
+      return;
+    }
+
     let responseData;
     await fetch('http://localhost:4000/login', {
       method: "POST",
@@ -22,7 +27,7 @@ const Login = () => {
         Accept: 'application/json',
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(formData),
+      body: JSON.stringify({ email, password }),
     })
       .then(response => response.json())
       .then(data => responseData = data);
@@ -31,12 +36,17 @@ const Login = () => {
       localStorage.setItem('auth-token', responseData.token);
       window.location.replace('/');
     } else {
-      alert(responseData.errors);
+      alert(responseData.error);
     }
   };
 
   const signup = async () => {
-    console.log("signup function executed", formData);
+    const { firstname, name, email, password } = formData;
+    if (!firstname || !name || !email || !password) {
+      alert('Veuillez remplir tous les champs.');
+      return;
+    }
+
     let responseData;
     await fetch('http://localhost:4000/signup', {
       method: "POST",
@@ -44,7 +54,7 @@ const Login = () => {
         Accept: 'application/json',
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(formData),
+      body: JSON.stringify({ firstname, name, email, password }),
     })
       .then(response => response.json())
       .then(data => responseData = data);
@@ -53,7 +63,7 @@ const Login = () => {
       localStorage.setItem('auth-token', responseData.token);
       window.location.replace('/');
     } else {
-      alert(responseData.errors);
+      alert(responseData.error);
     }
   };
 
@@ -73,11 +83,11 @@ const Login = () => {
                 className='login-input'
               />
               <input
-                name='username'
+                name='name'
                 type='text'
-                value={formData.username}
+                value={formData.name}
                 onChange={changeHandler}
-                placeholder='Votre nom d’utilisateur'
+                placeholder='Votre nom'
                 className='login-input'
               />
             </>

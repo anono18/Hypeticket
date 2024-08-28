@@ -23,17 +23,33 @@ const AddTickets = () => {
     setTickets(newTickets);
   };
 
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+
+  //   try {
+  //     await axios.post(`http://localhost:4000/add-tickets/${eventId}`, { tickets });
+  //     alert('Tickets ajoutés avec succès!');
+  //     navigate('/'); // Redirection vers la page d'accueil ou une autre page souhaitée
+  //   } catch (error) {
+  //     console.error('Erreur lors de l\'ajout des tickets:', error);
+  //   }
+  // };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    console.log('Sending data:', { tickets });
+
     try {
-      await axios.post(`http://localhost:4000/add-tickets/${eventId}`, { tickets });
-      alert('Tickets ajoutés avec succès!');
-      navigate('/'); // Redirection vers la page d'accueil ou une autre page souhaitée
+        await axios.post(`http://localhost:4000/add-tickets/${eventId}`, { tickets });
+        alert('Tickets ajoutés avec succès!');
+        navigate('/'); // Redirection vers la page d'accueil ou une autre page souhaitée
     } catch (error) {
-      console.error('Erreur lors de l\'ajout des tickets:', error);
+        console.error('Erreur lors de l\'ajout des tickets:', error);
     }
-  };
+};
+
+
 
   return (
     <div className="flex-1 p-8">

@@ -12,6 +12,12 @@ const axios = require('axios');
 const PDFDocument = require('pdfkit');
 const qr = require('qr-image');
 const fs = require('fs');
+// const bcrypt = require('bcrypt');
+require('dotenv').config();
+const bcrypt = require('bcryptjs');
+const Ticket = require('../backend/models/ticket');
+
+
 
 
 
@@ -245,104 +251,147 @@ const User = mongoose.model('User', {
 
 
 
-// Endpoint pour enregistrer un nouvel utilisateur
 app.post('/signup', async (req, res) => {
-    let check = await User.findOne({ email: req.body.email });
-    if (check) {
-        return res.status(400).json({
-            success: false,
-            error: 'Un utilisateur avec cet email existe déjà',
-        });
-    }
-    const user = new User({
-        firstname: req.body.firstname,
-        name: req.body.name,
-        email: req.body.email,
-        password: req.body.password,
-        ticketData: {}, // Initialise ticketData comme un objet vide
-    });
+    const { firstname, name, email, password, phoneNumber, paymentMethod } = req.body;
 
-    await user.save();
-    const data = {
-        user: {
-            id: user.id,
-        },
-    };
-    const token = jwt.sign(data, "secret_ecom");
-    res.json({ success: true, token });
-});
-
-
-// Endpoint pour le login de l'utilisateur
-app.post('/login', async (req, res) => {
-    let user = await User.findOne({ email: req.body.email });
-    if (user) {
-        const passMatch = req.body.password === user.password;
-        if (passMatch) {
-            const data = {
-                user: {
-                    id: user.id,
-                },
-            };
-            const token = jwt.sign(data, "secret_ecom");
-            res.json({ success: true, token });
-        } else {
-            res.json({ success: false, error: "Mot de passe incorrect" });
+    try {
+        // Vérifier si l'utilisateur existe déjà
+        let user = await User.findOne({ email });
+        if (user) {
+            return res.status(400).json({ success: false, error: "User already exists" });
         }
-    } else {
-        res.json({ success: false, error: "Adresse email incorrecte" });
+
+        // Hacher le mot de passe
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        // Créer un nouvel utilisateur
+        user = new User({
+            firstname,
+            name,
+            email,
+            password: hashedPassword,
+            phoneNumber,
+            paymentMethod
+        });
+
+        await user.save();
+
+        // Générer un token JWT
+        const data = { user: { id: user.id } };
+        const token = jwt.sign(data, "secret_ecom", { expiresIn: '1h' });
+
+        res.status(201).json({ success: true, token });
+    } catch (err) {
+        res.status(500).json({ success: false, error: "Server error" });
     }
 });
 
 
-// le middleware de verification de connection
-const fetchUser = async (req, res, next) => {
+app.post('/login', async (req, res) => {
+    const { email, password } = req.body;
+
+    try {
+        // Trouver l'utilisateur par email
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(400).json({ success: false, error: "Invalid email or password" });
+        }
+
+        // Comparer le mot de passe fourni avec le mot de passe stocké
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ success: false, error: "Invalid email or password" });
+        }
+
+        // Générer un token JWT
+        const data = { user: { id: user.id } };
+        const token = jwt.sign(data, "secret_ecom");
+
+        res.json({ success: true, token });
+    } catch (err) {
+        res.status(500).json({ success: false, error: "Server error" });
+    }
+});
+
+
+const fetchUser = (req, res, next) => {
     const token = req.header('auth-token');
     if (!token) {
-        return res.status(401).send({ errors: 'Please authenticate using a valid login' });
+        return res.status(401).json({ success: false, error: "No token, authorization denied" });
     }
 
     try {
-        const data = jwt.verify(token, 'secret_ecom');
-        req.user = data.user;
+        const decoded = jwt.verify(token, "secret_ecom");
+        req.user = decoded.user;
         next();
-    } catch (error) {
-        res.status(401).send({ errors: 'Please authenticate using a valid token' });
+    } catch (err) {
+        res.status(401).json({ success: false, error: "Token is not valid" });
     }
 };
 
+
 //**************************************************************tout concernant les ticket ******************************************************
 
-const Ticket = mongoose.model("tickets", {
-    type: {
-        type: String,
-        required: true
-    },
-    price: {
-        type: Number,
-        required: true
-    },
-    availability: {
-        type: Number,
-        required: true
-    },
-    event: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'events',
-        required: true
-    },
-    user: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
+// const Ticket = mongoose.model("tickets", {
+//     type: {
+//         type: String,
+//         required: true
+//     },
+//     price: {
+//         type: Number,
+//         required: true
+//     },
+//     availability: {
+//         type: Number,
+//         required: true
+//     },
+//     event: {
+//         type: mongoose.Schema.Types.ObjectId,
+//         ref: 'events',
+//         required: true
+//     },
+//     user: {
+//         type: mongoose.Schema.Types.ObjectId,
+//         ref: 'User',
 
-    }
-});
+//     }
+// });
 
 
 // Ajouter des tickets à un événement
+// app.post('/add-tickets/:eventId', async (req, res) => {
+//     const { eventId } = req.params;
+//     const { tickets } = req.body; // tickets devrait être un tableau de tickets
+
+//     try {
+//         // Vérifier que l'événement existe
+//         const event = await Event.findById(eventId);
+//         if (!event) {
+//             return res.status(404).json({ message: 'Événement non trouvé' });
+//         }
+
+//         // Créer et sauvegarder les tickets
+//         const createdTickets = await Promise.all(tickets.map(ticket => {
+//             const newTicket = new Ticket({ ...ticket, event: eventId });
+//             return newTicket.save();
+//         }));
+
+//         res.status(201).json({
+//             message: 'Tickets ajoutés avec succès',
+//             tickets: createdTickets
+//         });
+//     } catch (error) {
+//         res.status(500).json({ error: error.message });
+//     }
+// });
+
 app.post('/add-tickets/:eventId', async (req, res) => {
     const { eventId } = req.params;
     const { tickets } = req.body; // tickets devrait être un tableau de tickets
+
+    // Log les données reçues pour le débogage
+    console.log('Received data:', req.body);
 
     try {
         // Vérifier que l'événement existe
@@ -351,9 +400,18 @@ app.post('/add-tickets/:eventId', async (req, res) => {
             return res.status(404).json({ message: 'Événement non trouvé' });
         }
 
+        // Vérifiez le format des données des tickets
+        if (!Array.isArray(tickets) || tickets.some(ticket => !ticket.type || !ticket.price || !ticket.availability)) {
+            return res.status(400).json({ message: 'Données des tickets invalides' });
+        }
+
         // Créer et sauvegarder les tickets
-        const createdTickets = await Promise.all(tickets.map(ticket => {
-            const newTicket = new Ticket({ ...ticket, event: eventId });
+        const createdTickets = await Promise.all(tickets.map(async (ticket) => {
+            // Créer un nouveau ticket avec l'événement et le numéro de ticket
+            const newTicket = new Ticket({
+                ...ticket,
+                event: eventId
+            });
             return newTicket.save();
         }));
 
@@ -362,10 +420,11 @@ app.post('/add-tickets/:eventId', async (req, res) => {
             tickets: createdTickets
         });
     } catch (error) {
+        // Log l'erreur pour le débogage
+        console.error('Erreur lors de l\'ajout des tickets:', error);
         res.status(500).json({ error: error.message });
     }
 });
-
 
 
 // endpoint pour récupérer tous les tickets associés à un événement spécifique
@@ -394,15 +453,64 @@ app.get('/rev', async (req, res) => {
 
 
 
+// app.get('/event/:eventId/tickets', async (req, res) => {
+//     try {
+//         const eventId = req.params.eventId;
+//         const tickets = await Ticket.find({ eventId });
+
+//         if (!tickets || tickets.length === 0) {
+//             return res.status(404).send({ error: 'Aucun ticket trouvé pour cet événement' });
+//         }
+
+//         const ticketDetails = tickets.reduce((acc, ticket) => {
+//             acc[ticket.type] = ticket.availability;
+//             return acc;
+//         }, {});
+
+//         res.status(200).json(ticketDetails);
+//     } catch (error) {
+//         console.error('Erreur lors de la récupération des tickets:', error.message);
+//         res.status(500).send('Erreur du serveur');
+//     }
+// });
+
+
+// app.get('/event/:eventId/tickets', async (req, res) => {
+//     try {
+//         console.log("en cours")
+//         const eventId = req.params.eventId;
+//         const tickets = await Ticket.find({ event: eventId });
+
+//         console.log(tickets)
+//         if (!tickets || tickets.length === 0) {
+//             return res.status(404).json({ error: 'Aucun ticket trouvé pour cet événement' });
+//         }
+
+//         const ticketDetails = tickets.reduce((acc, ticket) => {
+//             acc[ticket.type] = ticket.availability;
+//             return acc;
+//         }, {});
+
+//         res.status(200).json(ticketDetails);
+//     } catch (error) {
+//         console.error('Erreur lors de la récupération des tickets:', error.message);
+//         res.status(500).json({ error: 'Erreur du serveur' });
+//     }
+// });
+
+
 app.get('/event/:eventId/tickets', async (req, res) => {
     try {
+        console.log("En cours de traitement");
         const eventId = req.params.eventId;
-        const tickets = await Ticket.find({ eventId });
+        const tickets = await Ticket.find({ event: eventId });
 
+        console.log("Tickets trouvés :", tickets);
         if (!tickets || tickets.length === 0) {
-            return res.status(404).send({ error: 'Aucun ticket trouvé pour cet événement' });
+            return res.status(404).json({ error: 'Aucun ticket trouvé pour cet événement' });
         }
 
+        // Assurez-vous que le type est bien représenté
         const ticketDetails = tickets.reduce((acc, ticket) => {
             acc[ticket.type] = ticket.availability;
             return acc;
@@ -410,10 +518,14 @@ app.get('/event/:eventId/tickets', async (req, res) => {
 
         res.status(200).json(ticketDetails);
     } catch (error) {
-        console.error('Erreur lors de la récupération des tickets:', error.message);
-        res.status(500).send('Erreur du serveur');
+        console.error('Erreur lors de la récupération des tickets :', error.message);
+        res.status(500).json({ error: 'Erreur du serveur' });
     }
 });
+
+
+
+
 
 
 
@@ -542,74 +654,166 @@ app.delete('/reservations/:id', async (req, res) => {
 
 
 
+
+
+
 //*************************************************************Endpoint pour le payement***********************************
 
 
-async function generateQRCode(data) {
-    try {
-        // Générer le QR code en format PNG
-        return qr.imageSync(data, { type: 'png' });
-    } catch (error) {
-        console.error('Erreur lors de la génération du QR code :', error);
-        throw error;
-    }
-}
+// async function generateQRCode(data) {
+//     try {
+//         // Générer le QR code en format PNG
+//         return qr.imageSync(data, { type: 'png' });
+//     } catch (error) {
+//         console.error('Erreur lors de la génération du QR code :', error);
+//         throw error;
+//     }
+// }
 
-async function createPDFWithQRCode(qrCodeBuffer, outputPath) {
-    try {
-        const doc = new PDFDocument();
-        doc.pipe(fs.createWriteStream(outputPath));
+// async function createPDFWithQRCode(qrCodeBuffer, outputPath) {
+//     try {
+//         const doc = new PDFDocument();
+//         doc.pipe(fs.createWriteStream(outputPath));
 
-        doc.fontSize(12).text('Merci pour votre achat ! Voici votre QR code :', {
-            align: 'center'
-        });
+//         doc.fontSize(12).text('Merci pour votre achat ! Voici votre QR code :', {
+//             align: 'center'
+//         });
 
-        // Ajouter le QR code au PDF
-        doc.image(qrCodeBuffer, {
-            fit: [250, 250],
-            align: 'center',
-            valign: 'center'
-        });
+//         // Ajouter le QR code au PDF
+//         doc.image(qrCodeBuffer, {
+//             fit: [250, 250],
+//             align: 'center',
+//             valign: 'center'
+//         });
 
-        doc.end();
-        console.log('PDF créé avec succès !');
-    } catch (error) {
-        console.error('Erreur lors de la création du PDF :', error);
-        throw error;
-    }
-}
+//         doc.end();
+//         console.log('PDF créé avec succès !');
+//     } catch (error) {
+//         console.error('Erreur lors de la création du PDF :', error);
+//         throw error;
+//     }
+// }
 
-async function sendQRCodeByEmail(email, pdfPath) {
-    const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-            user: 'adododjialban@gmail.com',
-            pass: 'hulx sonc faua wwgd'
-        }
-    });
+// async function sendQRCodeByEmail(email, pdfPath) {
+//     const transporter = nodemailer.createTransport({
+//         service: 'gmail',
+//         auth: {
+//             user: 'adododjialban@gmail.com',
+//             pass: 'hulx sonc faua wwgd'
+//         }
+//     });
 
-    const mailOptions = {
-        from: 'adododjialban@gmail.com',
-        to: email,
-        subject: 'Votre QR Code de Billet',
-        text: 'Merci pour votre achat ! Veuillez trouver votre QR code en pièce jointe.',
-        attachments: [
-            {
-                filename: 'ticket.pdf',
-                path: pdfPath
-            }
-        ]
-    };
+//     const mailOptions = {
+//         from: 'adododjialban@gmail.com',
+//         to: email,
+//         subject: 'Votre QR Code de Billet',
+//         text: 'Merci pour votre achat ! Veuillez trouver votre QR code en pièce jointe.',
+//         attachments: [
+//             {
+//                 filename: 'ticket.pdf',
+//                 path: pdfPath
+//             }
+//         ]
+//     };
 
-    try {
-        await transporter.sendMail(mailOptions);
-        console.log('QR code envoyé avec succès à', email);
-    } catch (error) {
-        console.error('Erreur lors de l’envoi du QR code :', error);
-        throw error;
-    }
-}
+//     try {
+//         await transporter.sendMail(mailOptions);
+//         console.log('QR code envoyé avec succès à', email);
+//     } catch (error) {
+//         console.error('Erreur lors de l’envoi du QR code :', error);
+//         throw error;
+//     }
+// }
 
+
+
+
+// app.post('/simulate-payment', fetchUser, async (req, res) => {
+//     const { eventId, ticketDetails, securityCode, paymentMethod, phoneNumber } = req.body;
+
+//     if (!req.user) {
+//         return res.status(401).json({ message: 'User not authenticated' });
+//     }
+
+//     try {
+//         const event = await Event.findById(eventId);
+//         if (!event) {
+//             return res.status(404).json({ message: 'Event not found' });
+//         }
+
+//         const tickets = await Ticket.find({ event: eventId });
+//         if (!tickets.length) {
+//             return res.status(404).json({ message: 'No tickets found for this event' });
+//         }
+
+//         let totalPrice = 0;
+//         for (const detail of ticketDetails) {
+//             const ticket = tickets.find(ticket => ticket._id.toString() === detail.ticketId);
+//             if (ticket) {
+//                 totalPrice += ticket.price * detail.quantity;
+//             } else {
+//                 return res.status(404).json({ message: `Ticket with ID ${detail.ticketId} not found` });
+//             }
+//         }
+
+//         if (req.body.amount !== totalPrice) {
+//             return res.status(400).json({ message: 'Amount does not match the total price for the quantity of tickets' });
+//         }
+
+//         if (securityCode !== '1234') {
+//             return res.status(400).json({ message: 'Invalid security code' });
+//         }
+
+//         const isTMoney = ['90', '91', '92', '93', '70', '71'].some(prefix => phoneNumber.startsWith(prefix));
+//         const isFlooz = ['96', '97', '98', '99', '79'].some(prefix => phoneNumber.startsWith(prefix));
+
+//         if (paymentMethod === 'TMoney' && !isTMoney) {
+//             return res.status(400).json({ message: 'Invalid phone number for TMoney' });
+//         } else if (paymentMethod === 'Flooz' && !isFlooz) {
+//             return res.status(400).json({ message: 'Invalid phone number for Flooz' });
+//         }
+
+//         // Generate detailed QR code data
+//         const ticketDetailsFormatted = ticketDetails.map(detail => {
+//             const ticket = tickets.find(ticket => ticket._id.toString() === detail.ticketId);
+//             return {
+//                 type: ticket ? ticket.type : 'Unknown',
+//                 price: ticket ? ticket.price : 0,
+//                 quantity: detail.quantity
+//             };
+//         });
+
+//         const qrCodeData = `
+//         Evenement: ${event.name}
+//         Ticket Details:
+//         ${ticketDetailsFormatted.map(d => 
+//         `Type: ${d.type}, 
+//         PriX: ${d.price}, 
+//         Quantité: ${d.quantity}`).join('\n')}
+//         Total Payer: ${totalPrice}
+//         `;
+
+//         const qrCodeBuffer = await generateQRCode(qrCodeData);
+
+//         // Create the PDF with QR code and event details
+//         const pdfPath = path.join(__dirname, 'ticket.pdf');
+//         await createPDFWithQRCode(qrCodeBuffer, pdfPath, event, ticketDetailsFormatted, totalPrice);
+
+//         // Get user email
+//         const user = await User.findById(req.user.id);
+//         if (!user) {
+//             return res.status(404).json({ message: 'User not found' });
+//         }
+
+//         // Send PDF by email
+//         await sendQRCodeByEmail(user.email, pdfPath);
+
+//         res.json({ message: 'Payment successful! QR code has been sent.' });
+//     } catch (error) {
+//         console.error('Error processing payment:', error);
+//         res.status(500).json({ message: 'Internal server error' });
+//     }
+// });
 app.post('/simulate-payment', fetchUser, async (req, res) => {
     const { eventId, ticketDetails, securityCode, paymentMethod, phoneNumber } = req.body;
 
@@ -655,28 +859,111 @@ app.post('/simulate-payment', fetchUser, async (req, res) => {
             return res.status(400).json({ message: 'Invalid phone number for Flooz' });
         }
 
-        const qrCodeData = `Event Ticket - Event ID: ${eventId} - Phone: ${phoneNumber} - Amount: ${totalPrice} - Ticket Details: ${JSON.stringify(ticketDetails)}`;
-        const qrCodeBuffer = await generateQRCode(qrCodeData);
+        // Create PDFs for each ticket detail
+        const pdfPaths = [];
+        for (const detail of ticketDetails) {
+            const ticket = tickets.find(ticket => ticket._id.toString() === detail.ticketId);
+            if (ticket) {
+                for (let i = 0; i < detail.quantity; i++) {
+                    const qrCodeData = `
+                    ${ticket._id}
+                    Ticket Number: ${ticket.ticketNumber}-${i + 1}
+                    Event: ${event.name}
+                    Ticket Type: ${ticket.type}
+                    Price: ${ticket.price}
+                    `;
+                    
+                    const qrCodeBuffer = await generateQRCode(qrCodeData);
+                    
+                    // Generate a unique PDF for each QR code
+                    const pdfPath = path.join(__dirname, `ticket-${ticket.ticketNumber}-${i + 1}.pdf`);
+                    await createPDFWithQRCode(qrCodeBuffer, pdfPath);
+                    
+                    pdfPaths.push(pdfPath);
+                }
+            }
+        }
 
-        // Créer le PDF avec le QR code
-        const pdfPath = path.join(__dirname, 'ticket.pdf');
-        await createPDFWithQRCode(qrCodeBuffer, pdfPath);
-
-        // Récupérer l'adresse e-mail de l'utilisateur
+        // Get user email
         const user = await User.findById(req.user.id);
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        // Envoyer le PDF par e-mail
-        await sendQRCodeByEmail(user.email, pdfPath);
+        // Send all PDFs by email
+        await Promise.all(pdfPaths.map(async (pdfPath) => {
+            await sendQRCodeByEmail(user.email, pdfPath);
+        }));
 
-        res.json({ message: 'Payment successful! QR code has been sent.' });
+        res.json({ message: 'Payment successful! QR codes have been sent.' });
     } catch (error) {
         console.error('Error processing payment:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 });
+
+async function generateQRCode(data) {
+    try {
+        return qr.imageSync(data, { type: 'png' });
+    } catch (error) {
+        console.error('Error generating QR code:', error);
+        throw error;
+    }
+}
+
+async function createPDFWithQRCode(qrCodeBuffer, outputPath) {
+    try {
+        const doc = new PDFDocument();
+        doc.pipe(fs.createWriteStream(outputPath));
+
+        doc.fontSize(12).text(`Merci pour votre achat ; voici votre billet pour l'evenement. faite le scanner pour avoir acces a l'evenement`, {
+            align: 'center'
+        });
+
+        doc.image(qrCodeBuffer, {
+            fit: [250, 250],
+            align: 'center',
+            valign: 'center'
+        });
+
+        doc.end();
+        console.log('PDF created successfully:', outputPath);
+    } catch (error) {
+        console.error('Error creating PDF:', error);
+        throw error;
+    }
+}
+
+async function sendQRCodeByEmail(email, pdfPath) {
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: 'adododjialban@gmail.com',
+            pass: 'hulx sonc faua wwgd'
+        }
+    });
+
+    const mailOptions = {
+        from: 'adododjialban@gmail.com',
+        to: email,
+        subject: 'Your Ticket QR Code',
+        text: 'Thank you for your purchase! Please find your QR code attached.',
+        attachments: [
+            {
+                filename: 'ticket.pdf',
+                path: pdfPath
+            }
+        ]
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log('QR code sent successfully to', email);
+    } catch (error) {
+        console.error('Error sending QR code:', error);
+        throw error;
+    }
+}
 
 
 
