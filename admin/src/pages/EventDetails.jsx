@@ -568,6 +568,84 @@ export default EventDetails;
 
 
 
+// import React, { useState, useEffect } from 'react';
+// import { useParams, useNavigate } from 'react-router-dom';
+// import axios from 'axios';
+
+// const EventDetails = ({ events = [] }) => {
+//     // const { eventId } = useParams();
+//     const eventId= event.id;
+//     const event = events.find(event => event.id === parseInt(eventId));
+//     const navigate = useNavigate();
+
+//     const [ticketDetails, setTicketDetails] = useState({});
+//     const [reserve, setReserve] = useState({}); // State pour stocker les détails des réservations
+
+//     useEffect(() => {
+//         if (event) {
+//             // Récupération des détails des tickets
+//             // axios.get(`/event/${eventId}/tickets`)
+//             //     .then(response => setTicketDetails(response.data))
+//             //     .catch(error => console.error('Erreur lors de la récupération des détails des tickets :', error));
+
+//             // Récupération des réservations
+//             axios.get(`/event/${eventId}/reserve`)
+//                 .then(response => setReserve(response.data.reserve))
+//                 .catch(error => console.error('Erreur lors de la récupération de la réserve :', error));
+//         }
+//     }, [event, eventId]);
+
+//     if (!event) {
+//         return <p>Événement non trouvé</p>;
+//     }
+
+//     const handleEditEvent = () => {
+//         navigate(`/addevent`, { state: { event } });
+//     };
+
+//     return (
+//         <section>
+//             <div className="p-6 bg-white rounded-lg shadow-lg max-w-xl mt-6 mx-auto">
+//                 <img 
+//                     src={event.image} 
+//                     alt={event.name} 
+//                     className="rounded-lg drop-shadow-xl h-64 w-full object-cover mb-4" 
+//                 />
+//                 <h2 className="text-2xl font-bold mb-4">{event.name}</h2>
+                
+//                 {/* Afficher les détails des tickets et la réserve */}
+//                 <div className="text-lg font-semibold mb-4">
+//                     <h3>Nombre de réservations :</h3>
+//                     <ul>
+//                         {Object.entries(reserve).map(([type, count]) => (
+//                             <li key={type}>{type} : {count}</li>
+//                         ))}
+//                     </ul>
+//                 </div>
+
+//                 {/* Bouton pour voir/modifier l'événement */}
+//                 <button
+//                     onClick={handleEditEvent}
+//                     className="bg-blue-500 text-white py-2 px-4 rounded-lg mt-4"
+//                 >
+//                    VOIR TOUS LES DETAILS / Modifier l'événement
+//                 </button>
+//             </div>
+//         </section>
+//     );
+// };
+
+// export default EventDetails;
+
+
+
+
+
+
+
+
+
+
 
 
 

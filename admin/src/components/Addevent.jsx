@@ -282,6 +282,7 @@ const Addevent = () => {
   };
 
   const handleSubmit = async (e) => {
+    
     e.preventDefault();
 
     const formData = new FormData();
@@ -363,7 +364,7 @@ const Addevent = () => {
               placeholder="Nom de l'événement"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="border border-gray-300 rounded-lg p-2"
+              className="border border-gray-300 rounded-lg p-2 uppercase"
             />
             <input
               type="text"
@@ -379,7 +380,7 @@ const Addevent = () => {
               className="border border-gray-300 rounded-lg p-2"
             />
             <input
-              type="text"
+              type="number"
               placeholder="Contact Support"
               value={supportContact}
               onChange={(e) => setSupportContact(e.target.value)}

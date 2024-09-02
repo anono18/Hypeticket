@@ -36,9 +36,9 @@ const ListeTicket = ({ id }) => {
             ticketType: reservation.ticket.type || 'Type inconnu',
             quantity: reservation.quantity || 0,
             price: reservation.ticket.price || 0,
-            total: (reservation.quantity || 0) * (reservation.ticket.price || 0), // Calculer le prix total
+            total: (reservation.quantity || 0) * (reservation.ticket.price || 0), 
           };
-        }).filter(ticket => ticket !== null); // Supprimer les tickets null
+        }).filter(ticket => ticket !== null);
 
         setTickets(formattedTickets);
       } catch (error) {
@@ -52,8 +52,8 @@ const ListeTicket = ({ id }) => {
     fetchTickets();
   }, []);
 
-  const handlePay = (_id) => {
-    navigate(`/event/${_id}`); // Remplacer eventId par ticketId pour la navigation
+  const handlePay = (id) => {
+    navigate(`/evenpay`); 
   };
 
   const onCancel = async (ticketId) => {
@@ -107,7 +107,7 @@ const ListeTicket = ({ id }) => {
               <th>Actions</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className='te'>
             {tickets.map((ticket) => (
               <tr key={ticket.id}>
                 <td>
@@ -116,7 +116,7 @@ const ListeTicket = ({ id }) => {
                     alt={ticket.eventName}
                     className="event-image"
                   />
-                </td>
+                </td >
                 <td className="text-center">{ticket.eventName}</td>
                 <td className="text-center">{ticket.ticketType}</td>
                 <td className="text-center">{ticket.quantity}</td>
@@ -130,12 +130,12 @@ const ListeTicket = ({ id }) => {
                   >
                     ❌
                   </button>
-                  <button
-                    onClick={() => handlePay(_id)}
+                  {/* <button
+                    onClick={() => handlePay(id)}
                     className="pay-button"
                   >
                     ✔️
-                  </button>
+                  </button> */}
                 </td>
               </tr>
             ))}

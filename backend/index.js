@@ -15,7 +15,6 @@ const fs = require('fs');
 // const bcrypt = require('bcrypt');
 require('dotenv').config();
 const bcrypt = require('bcryptjs');
-const Ticket = require('../backend/models/ticket');
 
 
 
@@ -167,21 +166,110 @@ app.get('/newcollection', async (req, res) => {
 
 
 // endpoint pour le nombre de reservation
-app.get('/events/:id/reserveCount', async (req, res) => {
+// app.get('/events/:id/reserveCount', async (req, res) => {
+//     const { id } = req.params;
+//     const event = await Event.findOne({ _id: id });
+//     if (!event) {
+//         return res.status(404).json({
+//             success: false,
+//             message: "Événement non trouvé"
+//         });
+//     }
+//     const reserveCount = event.reserve || 0;
+//     res.json({
+//         success: true,
+//         reserveCount
+//     });
+// });
+// app.get('/event/:eventId/reserve', async (req, res) => {
+//     const { eventId } = req.params;
+
+//     try {
+//         // Recherche de l'événement par ID
+//         const event = await Event.findById(eventId);
+//         // Vérifier si l'événement existe
+//         if (!event) {
+//             return res.status(404).json({ message: 'Event not found' });
+//         }
+//         // Récupérer et retourner l'attribut `reserve`
+//         const reserve = event.reserve || 0; // Si `reserve` est indéfini, retourner 0
+//         console.log(reserve);
+
+//         res.json({ eventId: eventId, reserve: reserve });
+//         console.log( eventId,reserve);
+//     } catch (error) {
+//         console.error('Error retrieving event reserve:', error);
+//         res.status(500).json({ message: 'Internal server error' });
+//     }
+// });
+
+app.get('/event/:id/reserve', async (req, res) => {
     const { id } = req.params;
-    const event = await Event.findOne({ _id: id });
-    if (!event) {
-        return res.status(404).json({
-            success: false,
-            message: "Événement non trouvé"
-        });
+
+    try {
+        const event = await Event.findOne({ id: parseInt(id) }); // Assurez-vous que `id` est converti en nombre si nécessaire
+        // Vérifier si l'événement existe
+        if (!event) {
+            return res.status(404).json({ message: 'Event not found' });
+        }
+
+        const tickets = await Ticket.find({ eventId: event.id, reserved: true }); // Utiliser `event.id` pour correspondre au champ des tickets
+
+        // Compter les tickets réservés par type
+        const reserveCount = tickets.reduce((acc, ticket) => {
+            const type = ticket.type || 'Unknown'; // Utiliser 'Unknown' si le type n'est pas défini
+            if (!acc[type]) {
+                acc[type] = 0;
+            }
+            acc[type]++;
+            return acc;
+        }, {});
+
+        res.json({ eventId: id, reserve: reserveCount });
+    } catch (error) {
+        console.error('Error retrieving event reserve:', error);
+        res.status(500).json({ message: 'Internal server error' });
     }
-    const reserveCount = event.reserve || 0;
-    res.json({
-        success: true,
-        reserveCount
-    });
 });
+
+// statistique
+app.get('/event/sales-stats', async (req, res) => {
+    try {
+        const salesData = await Ticket.aggregate([
+            { $match: { reserved: true } },
+            { $group: { _id: '$event', totalSold: { $sum: 1 } } },
+            { $lookup: {
+                from: 'events',
+                localField: '_id',
+                foreignField: '_id',
+                as: 'eventDetails'
+            }},
+            { $unwind: '$eventDetails' },
+            { $project: {
+                _id: 0,
+                name: '$eventDetails.name',
+                ticketsSold: '$totalSold'
+            }},
+            { $sort: { ticketsSold: -1 } }
+        ]);
+
+        console.log('Sales Data:', salesData);
+
+        const mostSold = salesData[0] || {};
+        const leastSold = salesData[salesData.length - 1] || {};
+
+        res.json({
+            mostSold,
+            leastSold,
+            allEvents: salesData
+        });
+    } catch (error) {
+        console.error('Error fetching event sales stats:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+
 
 
 
@@ -333,65 +421,36 @@ const fetchUser = (req, res, next) => {
 
 //**************************************************************tout concernant les ticket ******************************************************
 
-// const Ticket = mongoose.model("tickets", {
-//     type: {
-//         type: String,
-//         required: true
-//     },
-//     price: {
-//         type: Number,
-//         required: true
-//     },
-//     availability: {
-//         type: Number,
-//         required: true
-//     },
-//     event: {
-//         type: mongoose.Schema.Types.ObjectId,
-//         ref: 'events',
-//         required: true
-//     },
-//     user: {
-//         type: mongoose.Schema.Types.ObjectId,
-//         ref: 'User',
+const Ticket = mongoose.model("tickets", {
+    type: {
+        type: String,
+        required: true
+    },
+    price: {
+        type: Number,
+        required: true
+    },
+    availability: {
+        type: Number,
+        required: true
+    },
+    event: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'events',
+        required: true
+    },
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
 
-//     }
-// });
+    },
+});
 
 
 // Ajouter des tickets à un événement
-// app.post('/add-tickets/:eventId', async (req, res) => {
-//     const { eventId } = req.params;
-//     const { tickets } = req.body; // tickets devrait être un tableau de tickets
-
-//     try {
-//         // Vérifier que l'événement existe
-//         const event = await Event.findById(eventId);
-//         if (!event) {
-//             return res.status(404).json({ message: 'Événement non trouvé' });
-//         }
-
-//         // Créer et sauvegarder les tickets
-//         const createdTickets = await Promise.all(tickets.map(ticket => {
-//             const newTicket = new Ticket({ ...ticket, event: eventId });
-//             return newTicket.save();
-//         }));
-
-//         res.status(201).json({
-//             message: 'Tickets ajoutés avec succès',
-//             tickets: createdTickets
-//         });
-//     } catch (error) {
-//         res.status(500).json({ error: error.message });
-//     }
-// });
-
 app.post('/add-tickets/:eventId', async (req, res) => {
     const { eventId } = req.params;
     const { tickets } = req.body; // tickets devrait être un tableau de tickets
-
-    // Log les données reçues pour le débogage
-    console.log('Received data:', req.body);
 
     try {
         // Vérifier que l'événement existe
@@ -400,18 +459,9 @@ app.post('/add-tickets/:eventId', async (req, res) => {
             return res.status(404).json({ message: 'Événement non trouvé' });
         }
 
-        // Vérifiez le format des données des tickets
-        if (!Array.isArray(tickets) || tickets.some(ticket => !ticket.type || !ticket.price || !ticket.availability)) {
-            return res.status(400).json({ message: 'Données des tickets invalides' });
-        }
-
         // Créer et sauvegarder les tickets
-        const createdTickets = await Promise.all(tickets.map(async (ticket) => {
-            // Créer un nouveau ticket avec l'événement et le numéro de ticket
-            const newTicket = new Ticket({
-                ...ticket,
-                event: eventId
-            });
+        const createdTickets = await Promise.all(tickets.map(ticket => {
+            const newTicket = new Ticket({ ...ticket, event: eventId });
             return newTicket.save();
         }));
 
@@ -420,14 +470,53 @@ app.post('/add-tickets/:eventId', async (req, res) => {
             tickets: createdTickets
         });
     } catch (error) {
-        // Log l'erreur pour le débogage
-        console.error('Erreur lors de l\'ajout des tickets:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
+// app.post('/add-tickets/:eventId', async (req, res) => {
+//     const { eventId } = req.params;
+//     const { tickets } = req.body; // tickets devrait être un tableau de tickets
+
+//     // Log les données reçues pour le débogage
+//     console.log('Received data:', req.body);
+
+//     try {
+//         // Vérifier que l'événement existe
+//         const event = await Event.findById(eventId);
+//         if (!event) {
+//             return res.status(404).json({ message: 'Événement non trouvé' });
+//         }
+
+//         // Vérifiez le format des données des tickets
+//         if (!Array.isArray(tickets) || tickets.some(ticket => !ticket.type || !ticket.price || !ticket.availability)) {
+//             return res.status(400).json({ message: 'Données des tickets invalides' });
+//         }
+
+//         // Créer et sauvegarder les tickets
+//         const createdTickets = await Promise.all(tickets.map(async (ticket) => {
+//             // Créer un nouveau ticket avec l'événement et le numéro de ticket
+//             const newTicket = new Ticket({
+//                 ...ticket,
+//                 event: eventId
+//             });
+//             return newTicket.save();
+//         }));
+
+//         res.status(201).json({
+//             message: 'Tickets ajoutés avec succès',
+//             tickets: createdTickets
+//         });
+//     } catch (error) {
+//         // Log l'erreur pour le débogage
+//         console.error('Erreur lors de l\'ajout des tickets:', error);
+//         res.status(500).json({ error: error.message });
+//     }
+// });
+
 
 // endpoint pour récupérer tous les tickets associés à un événement spécifique
+
 app.get('/tickets', async (req, res) => {
     try {
         const tickets = await Ticket.find({});
@@ -635,6 +724,7 @@ app.get('/myreservations', fetchUser, async (req, res) => {
 
 
 
+
 //endpoint pour effacer une reservation
 app.delete('/reservations/:id', async (req, res) => {
     try {
@@ -659,75 +749,6 @@ app.delete('/reservations/:id', async (req, res) => {
 
 //*************************************************************Endpoint pour le payement***********************************
 
-
-// async function generateQRCode(data) {
-//     try {
-//         // Générer le QR code en format PNG
-//         return qr.imageSync(data, { type: 'png' });
-//     } catch (error) {
-//         console.error('Erreur lors de la génération du QR code :', error);
-//         throw error;
-//     }
-// }
-
-// async function createPDFWithQRCode(qrCodeBuffer, outputPath) {
-//     try {
-//         const doc = new PDFDocument();
-//         doc.pipe(fs.createWriteStream(outputPath));
-
-//         doc.fontSize(12).text('Merci pour votre achat ! Voici votre QR code :', {
-//             align: 'center'
-//         });
-
-//         // Ajouter le QR code au PDF
-//         doc.image(qrCodeBuffer, {
-//             fit: [250, 250],
-//             align: 'center',
-//             valign: 'center'
-//         });
-
-//         doc.end();
-//         console.log('PDF créé avec succès !');
-//     } catch (error) {
-//         console.error('Erreur lors de la création du PDF :', error);
-//         throw error;
-//     }
-// }
-
-// async function sendQRCodeByEmail(email, pdfPath) {
-//     const transporter = nodemailer.createTransport({
-//         service: 'gmail',
-//         auth: {
-//             user: 'adododjialban@gmail.com',
-//             pass: 'hulx sonc faua wwgd'
-//         }
-//     });
-
-//     const mailOptions = {
-//         from: 'adododjialban@gmail.com',
-//         to: email,
-//         subject: 'Votre QR Code de Billet',
-//         text: 'Merci pour votre achat ! Veuillez trouver votre QR code en pièce jointe.',
-//         attachments: [
-//             {
-//                 filename: 'ticket.pdf',
-//                 path: pdfPath
-//             }
-//         ]
-//     };
-
-//     try {
-//         await transporter.sendMail(mailOptions);
-//         console.log('QR code envoyé avec succès à', email);
-//     } catch (error) {
-//         console.error('Erreur lors de l’envoi du QR code :', error);
-//         throw error;
-//     }
-// }
-
-
-
-
 // app.post('/simulate-payment', fetchUser, async (req, res) => {
 //     const { eventId, ticketDetails, securityCode, paymentMethod, phoneNumber } = req.body;
 
@@ -736,11 +757,14 @@ app.delete('/reservations/:id', async (req, res) => {
 //     }
 
 //     try {
-//         const event = await Event.findById(eventId);
+//         const event = await Event.findById(eventId ,
+//             { $inc: { reserve: detail.quantity } },
+//             { new: true });
 //         if (!event) {
 //             return res.status(404).json({ message: 'Event not found' });
 //         }
 
+        
 //         const tickets = await Ticket.find({ event: eventId });
 //         if (!tickets.length) {
 //             return res.status(404).json({ message: 'No tickets found for this event' });
@@ -773,31 +797,30 @@ app.delete('/reservations/:id', async (req, res) => {
 //             return res.status(400).json({ message: 'Invalid phone number for Flooz' });
 //         }
 
-//         // Generate detailed QR code data
-//         const ticketDetailsFormatted = ticketDetails.map(detail => {
+//         // Create PDFs for each ticket detail
+//         const pdfPaths = [];
+//         for (const detail of ticketDetails) {
 //             const ticket = tickets.find(ticket => ticket._id.toString() === detail.ticketId);
-//             return {
-//                 type: ticket ? ticket.type : 'Unknown',
-//                 price: ticket ? ticket.price : 0,
-//                 quantity: detail.quantity
-//             };
-//         });
-
-//         const qrCodeData = `
-//         Evenement: ${event.name}
-//         Ticket Details:
-//         ${ticketDetailsFormatted.map(d => 
-//         `Type: ${d.type}, 
-//         PriX: ${d.price}, 
-//         Quantité: ${d.quantity}`).join('\n')}
-//         Total Payer: ${totalPrice}
-//         `;
-
-//         const qrCodeBuffer = await generateQRCode(qrCodeData);
-
-//         // Create the PDF with QR code and event details
-//         const pdfPath = path.join(__dirname, 'ticket.pdf');
-//         await createPDFWithQRCode(qrCodeBuffer, pdfPath, event, ticketDetailsFormatted, totalPrice);
+//             if (ticket) {
+//                 for (let i = 0; i < detail.quantity; i++) {
+//                     const qrCodeData = `
+//                     ${ticket._id}
+//                     Ticket Number: ${i + 1}
+//                     Event: ${event.name}
+//                     Ticket Type: ${ticket.type}
+//                     Price: ${ticket.price}
+//                     `;
+                    
+//                     const qrCodeBuffer = await generateQRCode(qrCodeData);
+                    
+//                     // Generate a unique PDF for each QR code
+//                     const pdfPath = path.join(__dirname, `ticket-${i + 1}.pdf`);
+//                     await createPDFWithQRCode(qrCodeBuffer, pdfPath);
+                    
+//                     pdfPaths.push(pdfPath);
+//                 }
+//             }
+//         }
 
 //         // Get user email
 //         const user = await User.findById(req.user.id);
@@ -805,17 +828,21 @@ app.delete('/reservations/:id', async (req, res) => {
 //             return res.status(404).json({ message: 'User not found' });
 //         }
 
-//         // Send PDF by email
-//         await sendQRCodeByEmail(user.email, pdfPath);
+//         // Send all PDFs by email
+//         await Promise.all(pdfPaths.map(async (pdfPath) => {
+//             await sendQRCodeByEmail(user.email, pdfPath);
+//         }));
 
-//         res.json({ message: 'Payment successful! QR code has been sent.' });
+//         res.json({ message: 'Payment successful! QR codes have been sent.' });
 //     } catch (error) {
 //         console.error('Error processing payment:', error);
 //         res.status(500).json({ message: 'Internal server error' });
 //     }
 // });
+
 app.post('/simulate-payment', fetchUser, async (req, res) => {
     const { eventId, ticketDetails, securityCode, paymentMethod, phoneNumber } = req.body;
+    
 
     if (!req.user) {
         return res.status(401).json({ message: 'User not authenticated' });
@@ -833,10 +860,13 @@ app.post('/simulate-payment', fetchUser, async (req, res) => {
         }
 
         let totalPrice = 0;
+        let totalQuantity = 0;  
+
         for (const detail of ticketDetails) {
             const ticket = tickets.find(ticket => ticket._id.toString() === detail.ticketId);
             if (ticket) {
                 totalPrice += ticket.price * detail.quantity;
+                totalQuantity += detail.quantity;
             } else {
                 return res.status(404).json({ message: `Ticket with ID ${detail.ticketId} not found` });
             }
@@ -859,6 +889,11 @@ app.post('/simulate-payment', fetchUser, async (req, res) => {
             return res.status(400).json({ message: 'Invalid phone number for Flooz' });
         }
 
+        // Incrémentez `reserve` par la quantité totale de tickets achetés
+        event.reserve = (event.reserve || 0) + totalQuantity;
+        await event.save();
+        console.log(eventId,event.reserve);
+
         // Create PDFs for each ticket detail
         const pdfPaths = [];
         for (const detail of ticketDetails) {
@@ -867,7 +902,7 @@ app.post('/simulate-payment', fetchUser, async (req, res) => {
                 for (let i = 0; i < detail.quantity; i++) {
                     const qrCodeData = `
                     ${ticket._id}
-                    Ticket Number: ${ticket.ticketNumber}-${i + 1}
+                    Ticket Number: ${i + 1}
                     Event: ${event.name}
                     Ticket Type: ${ticket.type}
                     Price: ${ticket.price}
@@ -876,7 +911,7 @@ app.post('/simulate-payment', fetchUser, async (req, res) => {
                     const qrCodeBuffer = await generateQRCode(qrCodeData);
                     
                     // Generate a unique PDF for each QR code
-                    const pdfPath = path.join(__dirname, `ticket-${ticket.ticketNumber}-${i + 1}.pdf`);
+                    const pdfPath = path.join(__dirname, `ticket-${i + 1}.pdf`);
                     await createPDFWithQRCode(qrCodeBuffer, pdfPath);
                     
                     pdfPaths.push(pdfPath);
@@ -891,9 +926,7 @@ app.post('/simulate-payment', fetchUser, async (req, res) => {
         }
 
         // Send all PDFs by email
-        await Promise.all(pdfPaths.map(async (pdfPath) => {
-            await sendQRCodeByEmail(user.email, pdfPath);
-        }));
+        await sendQRCodeByEmail(user.email, pdfPaths);
 
         res.json({ message: 'Payment successful! QR codes have been sent.' });
     } catch (error) {
@@ -910,13 +943,35 @@ async function generateQRCode(data) {
         throw error;
     }
 }
+// async function createPDFWithQRCode(qrCodeBuffer, outputPath) {
+//     try {
+//         const doc = new PDFDocument();
+//         doc.pipe(fs.createWriteStream(outputPath));
 
+//         doc.fontSize(12).text(`Merci pour votre achat ; voici votre billet pour l'evenement. faite le scanner pour avoir acces a l'evenement`, {
+//             align: 'center'
+//         });
+
+//         doc.image(qrCodeBuffer, {
+//             fit: [250, 250],
+//             align: 'center',
+//             valign: 'center'
+//         });
+
+//         doc.end();
+//         console.log('PDF created successfully:', outputPath);
+//     } catch (error) {
+//         console.error('Error creating PDF:', error);
+//         throw error;
+//     }
+// }
 async function createPDFWithQRCode(qrCodeBuffer, outputPath) {
     try {
         const doc = new PDFDocument();
-        doc.pipe(fs.createWriteStream(outputPath));
+        const stream = fs.createWriteStream(outputPath);
+        doc.pipe(stream);
 
-        doc.fontSize(12).text(`Merci pour votre achat ; voici votre billet pour l'evenement. faite le scanner pour avoir acces a l'evenement`, {
+        doc.fontSize(12).text(`Merci pour votre achat ; voici votre billet pour l'événement. Faites-le scanner pour accéder à l'événement.`, {
             align: 'center'
         });
 
@@ -927,6 +982,13 @@ async function createPDFWithQRCode(qrCodeBuffer, outputPath) {
         });
 
         doc.end();
+
+        // Attendre la fin du flux avant de continuer
+        await new Promise((resolve, reject) => {
+            stream.on('finish', resolve); // Le flux est terminé
+            stream.on('error', reject); // Une erreur s'est produite
+        });
+
         console.log('PDF created successfully:', outputPath);
     } catch (error) {
         console.error('Error creating PDF:', error);
@@ -934,7 +996,8 @@ async function createPDFWithQRCode(qrCodeBuffer, outputPath) {
     }
 }
 
-async function sendQRCodeByEmail(email, pdfPath) {
+
+async function sendQRCodeByEmail(email, pdfPaths) {
     const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
@@ -943,27 +1006,28 @@ async function sendQRCodeByEmail(email, pdfPath) {
         }
     });
 
+    const attachments = pdfPaths.map((pdfPath, index) => ({
+        filename: `ticket-${index + 1}.pdf`,
+        path: pdfPath
+    }));
+
     const mailOptions = {
         from: 'adododjialban@gmail.com',
         to: email,
-        subject: 'Your Ticket QR Code',
-        text: 'Thank you for your purchase! Please find your QR code attached.',
-        attachments: [
-            {
-                filename: 'ticket.pdf',
-                path: pdfPath
-            }
-        ]
+        subject: 'Your Ticket QR Codes',
+        text: 'Thank you for your purchase! Please find your QR codes attached.',
+        attachments: attachments
     };
 
     try {
         await transporter.sendMail(mailOptions);
-        console.log('QR code sent successfully to', email);
+        console.log('QR codes sent successfully to', email);
     } catch (error) {
-        console.error('Error sending QR code:', error);
+        console.error('Error sending QR codes:', error);
         throw error;
     }
 }
+
 
 
 
@@ -986,33 +1050,6 @@ app.post('/searchevents', async (req, res) => {
 });
 
 
-//********************************************************endpoint pour faire l'envoie de message****************************************
-app.post('/send-email', async (req, res) => {
-    const { name, email, subject, message } = req.body;
-
-    const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS,
-        },
-    });
-
-    const mailOptions = {
-        from: email,
-        to: 'adododjialban@gmail.com',
-        subject: subject,
-        text: `Nom: ${name}\nEmail: ${email}\nMessage: ${message}`,
-    };
-
-    try {
-        await transporter.sendMail(mailOptions);
-        res.status(200).json({ success: true, message: 'Email envoyé avec succès' });
-    } catch (error) {
-        console.error('Error sending email:', error);
-        res.status(500).json({ error: 'Erreur lors de l\'envoi de l\'email' });
-    }
-});
 
 
 // Start server

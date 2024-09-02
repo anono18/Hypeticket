@@ -42,8 +42,8 @@ const AddTickets = () => {
 
     try {
         await axios.post(`http://localhost:4000/add-tickets/${eventId}`, { tickets });
-        alert('Tickets ajoutés avec succès!');
-        navigate('/'); // Redirection vers la page d'accueil ou une autre page souhaitée
+        alert(`l'evenement et ses ticket ont été créés avec succès !`);
+        navigate('/allevent');
     } catch (error) {
         console.error('Erreur lors de l\'ajout des tickets:', error);
     }
