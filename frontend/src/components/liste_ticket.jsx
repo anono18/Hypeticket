@@ -78,6 +78,13 @@ const ListeTicket = ({ id }) => {
       </div>
     );
   }
+  if(tickets.length === 0){
+    return(
+      <div className="message">
+        <p>Vous n'avez pas de réservation.</p>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

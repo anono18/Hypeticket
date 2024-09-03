@@ -19,13 +19,12 @@ const bcrypt = require('bcryptjs');
 
 
 
-
-
 app.use(cors());
 app.use(express.json());
 
 // Database connection mongoDB
 mongoose.connect("mongodb+srv://adododjialban:arnold_18@cluster2.hnhpju9.mongodb.net/?retryWrites=true&w=majority&appName=Cluster2");
+
 
 // API
 app.get("/", (req, res) => {
@@ -108,7 +107,7 @@ const Event = mongoose.model("events", {
 });
 
 
-// Add an event
+// endpoint pour ajouter un evenement
 app.post('/addevent', async (req, res) => {
     let events = await Event.find({});
     let id = events.length > 0 ? events[events.length - 1].id + 1 : 1;
@@ -139,7 +138,7 @@ app.post('/addevent', async (req, res) => {
 });
 
 
-// Delete an event
+// effacer un evenemnt
 app.post('/removeevent', async (req, res) => {
     await Event.findOneAndDelete({ id: req.body.id });
     console.log("événement supprimé");
@@ -149,7 +148,7 @@ app.post('/removeevent', async (req, res) => {
     });
 });
 
-// Get all events
+// endpoint pour avoir tous les evenements
 app.get("/allevent", async (req, res) => {
     let events = await Event.find({});
     console.log("Liste des événements");
@@ -291,6 +290,21 @@ app.put('/events/:id', async (req, res) => {
         res.status(500).json({ error: 'Erreur lors de la mise à jour de l\'événement' });
     }
 });
+
+
+app.get('/events/:eventId', async (req, res) => {
+    try {
+        const event = await Event.findById(req.params.eventId); // Adjust the model name if needed
+        if (!event) {
+            return res.status(404).send('Événement non trouvé');
+        }
+        res.json(event);
+    } catch (error) {
+        console.error('Error fetching event details:', error);
+        res.status(500).send('Erreur lors de la récupération des détails de l\'événement');
+    }
+});
+
 
 
 
@@ -474,45 +488,6 @@ app.post('/add-tickets/:eventId', async (req, res) => {
     }
 });
 
-// app.post('/add-tickets/:eventId', async (req, res) => {
-//     const { eventId } = req.params;
-//     const { tickets } = req.body; // tickets devrait être un tableau de tickets
-
-//     // Log les données reçues pour le débogage
-//     console.log('Received data:', req.body);
-
-//     try {
-//         // Vérifier que l'événement existe
-//         const event = await Event.findById(eventId);
-//         if (!event) {
-//             return res.status(404).json({ message: 'Événement non trouvé' });
-//         }
-
-//         // Vérifiez le format des données des tickets
-//         if (!Array.isArray(tickets) || tickets.some(ticket => !ticket.type || !ticket.price || !ticket.availability)) {
-//             return res.status(400).json({ message: 'Données des tickets invalides' });
-//         }
-
-//         // Créer et sauvegarder les tickets
-//         const createdTickets = await Promise.all(tickets.map(async (ticket) => {
-//             // Créer un nouveau ticket avec l'événement et le numéro de ticket
-//             const newTicket = new Ticket({
-//                 ...ticket,
-//                 event: eventId
-//             });
-//             return newTicket.save();
-//         }));
-
-//         res.status(201).json({
-//             message: 'Tickets ajoutés avec succès',
-//             tickets: createdTickets
-//         });
-//     } catch (error) {
-//         // Log l'erreur pour le débogage
-//         console.error('Erreur lors de l\'ajout des tickets:', error);
-//         res.status(500).json({ error: error.message });
-//     }
-// });
 
 
 // endpoint pour récupérer tous les tickets associés à un événement spécifique
@@ -542,50 +517,6 @@ app.get('/rev', async (req, res) => {
 
 
 
-// app.get('/event/:eventId/tickets', async (req, res) => {
-//     try {
-//         const eventId = req.params.eventId;
-//         const tickets = await Ticket.find({ eventId });
-
-//         if (!tickets || tickets.length === 0) {
-//             return res.status(404).send({ error: 'Aucun ticket trouvé pour cet événement' });
-//         }
-
-//         const ticketDetails = tickets.reduce((acc, ticket) => {
-//             acc[ticket.type] = ticket.availability;
-//             return acc;
-//         }, {});
-
-//         res.status(200).json(ticketDetails);
-//     } catch (error) {
-//         console.error('Erreur lors de la récupération des tickets:', error.message);
-//         res.status(500).send('Erreur du serveur');
-//     }
-// });
-
-
-// app.get('/event/:eventId/tickets', async (req, res) => {
-//     try {
-//         console.log("en cours")
-//         const eventId = req.params.eventId;
-//         const tickets = await Ticket.find({ event: eventId });
-
-//         console.log(tickets)
-//         if (!tickets || tickets.length === 0) {
-//             return res.status(404).json({ error: 'Aucun ticket trouvé pour cet événement' });
-//         }
-
-//         const ticketDetails = tickets.reduce((acc, ticket) => {
-//             acc[ticket.type] = ticket.availability;
-//             return acc;
-//         }, {});
-
-//         res.status(200).json(ticketDetails);
-//     } catch (error) {
-//         console.error('Erreur lors de la récupération des tickets:', error.message);
-//         res.status(500).json({ error: 'Erreur du serveur' });
-//     }
-// });
 
 
 app.get('/event/:eventId/tickets', async (req, res) => {
@@ -629,6 +560,11 @@ const Reservation = mongoose.model('reservation', {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'tickets',
     },
+    // event: {
+    //     type: mongoose.Schema.Types.ObjectId,
+    //     ref: 'events',
+    //     required: true
+    // },
     quantity: {
         type: Number,
         required: true,
@@ -638,63 +574,158 @@ const Reservation = mongoose.model('reservation', {
 
 
 //endpoint pour reserver un ticket 
-app.post('/reserve', fetchUser, async (req, res) => {
-    const { ticketId, quantity } = req.body;
-    // Log des données reçues
-    console.log('ticketId:', ticketId);
-    console.log('quantity:', quantity);
+// app.post('/reserve', fetchUser, async (req, res) => {
+//     const { ticketId, quantity } = req.body;
+//     // Log des données reçues
+//     console.log('ticketId:', ticketId);
+//     console.log('quantity:', quantity);
 
-    // Validation des données
+//     // Validation des données
+//     if (!ticketId || !quantity || quantity <= 0) {
+//         console.log('Validation failed: ticketId or quantity is invalid');
+//         return res.status(400).send({ errors: 'TicketId et quantité sont requis et la quantité doit être positive' });
+//     }
+//     try {
+//         // Vérifier si le ticket existe et est disponible
+//         const ticket = await Ticket.findById(ticketId);
+//         console.log('Ticket found:', ticket);
+
+//         if (!ticket || ticket.availability < quantity) {
+//             console.log('Ticket non disponible ou quantité insuffisante');
+//             return res.status(400).send({ errors: 'Ticket non disponible ou quantité insuffisante' });
+//         }
+
+//         // Créer la réservation
+//         const reservation = new Reservation({
+//             user: req.user.id,
+//             ticket: ticketId,
+//             quantity: quantity,
+//         });
+
+//         console.log('Reservation to be saved:', reservation);
+
+//         // Mettre à jour la disponibilité du ticket
+//         ticket.availability -= quantity;
+//         console.log('Updated ticket availability:', ticket.availability);
+
+//         // Sauvegarder la réservation et le ticket
+//         await Promise.all([
+//             reservation.save(),
+//             ticket.save(),
+//         ]);
+
+//         // Extraire les détails pour ticketData
+//         const reservationDetails = {
+//             ticketId: ticket._id,
+//             quantity: reservation.quantity,
+//             type: ticket.type,
+//             eventDate: ticket.eventDate,
+//         };
+//         // Mettre à jour les données de l'utilisateur
+//         await User.findByIdAndUpdate(req.user.id, { $push: { ticketData: reservationDetails } });
+
+//         console.log('Reservation saved successfully:', reservation);
+//         res.status(200).send({ success: 'Réservation réussie', reservation });
+//     } catch (error) {
+//         console.error('Server error:', error.message);
+//         res.status(500).send('Erreur du serveur');
+//     }
+// });
+
+async function sendReservationEmail(email, eventName, ticketType, quantity, totalAmount, code) {
+    const emailContent = `
+        Bonjour,
+
+        Votre réservation pour l'événement ${eventName} a été effectuée avec succès.
+        Détails de la réservation :
+        - Type de ticket : ${ticketType}
+        - Quantité : ${quantity}
+        - Total à payer : ${totalAmount} FCFA
+        - Code de confirmation : ${code}
+
+        Veuillez utiliser ce code pour finaliser votre paiement.
+
+        Merci de votre confiance,
+        L'équipe Hype Ticket
+    `;
+
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: 'adododjialban@gmail.com',
+            pass: 'hulx sonc faua wwgd',
+        },
+    });
+
+    try {
+        await transporter.sendMail({
+            from: 'adododjialban@gmail.com',
+            to: email,
+            subject: 'Confirmation de réservation - Hype Ticket',
+            text: emailContent,
+        });
+        console.log('Email sent successfully to:', email);
+    } catch (error) {
+        console.error('Error sending reservation email:', error);
+        throw error;
+    }
+}
+
+app.post('/reserve', fetchUser, async (req, res) => {
+    const { ticketId, quantity, email } = req.body;
+
     if (!ticketId || !quantity || quantity <= 0) {
-        console.log('Validation failed: ticketId or quantity is invalid');
         return res.status(400).send({ errors: 'TicketId et quantité sont requis et la quantité doit être positive' });
     }
+
+    if (!email) {
+        return res.status(400).send({ errors: 'Email est requis pour envoyer le code de réservation.' });
+    }
+
     try {
-        // Vérifier si le ticket existe et est disponible
         const ticket = await Ticket.findById(ticketId);
-        console.log('Ticket found:', ticket);
 
         if (!ticket || ticket.availability < quantity) {
-            console.log('Ticket non disponible ou quantité insuffisante');
             return res.status(400).send({ errors: 'Ticket non disponible ou quantité insuffisante' });
         }
 
-        // Créer la réservation
         const reservation = new Reservation({
             user: req.user.id,
             ticket: ticketId,
             quantity: quantity,
+            // event:req.event.id 
         });
 
-        console.log('Reservation to be saved:', reservation);
-
-        // Mettre à jour la disponibilité du ticket
         ticket.availability -= quantity;
-        console.log('Updated ticket availability:', ticket.availability);
 
-        // Sauvegarder la réservation et le ticket
         await Promise.all([
             reservation.save(),
             ticket.save(),
         ]);
 
-        // Extraire les détails pour ticketData
         const reservationDetails = {
             ticketId: ticket._id,
             quantity: reservation.quantity,
             type: ticket.type,
             eventDate: ticket.eventDate,
         };
-        // Mettre à jour les données de l'utilisateur
         await User.findByIdAndUpdate(req.user.id, { $push: { ticketData: reservationDetails } });
 
-        console.log('Reservation saved successfully:', reservation);
+        const code = Math.floor(1000 + Math.random() * 9000);
+
+        await sendReservationEmail(email, ticket.eventName, ticket.type, quantity, ticket.price * quantity, code);
+
         res.status(200).send({ success: 'Réservation réussie', reservation });
     } catch (error) {
         console.error('Server error:', error.message);
         res.status(500).send('Erreur du serveur');
     }
 });
+
+
+
+
+
 
 
 
@@ -743,102 +774,31 @@ app.delete('/reservations/:id', async (req, res) => {
 
 
 
+// Add this to your backend routes
+
+app.get('/reservations/:eventId', async (req, res) => {
+    const { eventId } = req.params;
+
+    try {
+        // Find reservations for the event
+        const reservations = await Reservation.find({ event: eventId }).populate('user ticket');
+
+        if (!reservations.length) {
+            return res.status(404).send({ message: 'Aucune réservation trouvée pour cet événement.' });
+        }
+
+        res.status(200).send(reservations);
+    } catch (error) {
+        console.error('Server error:', error.message);
+        res.status(500).send('Erreur du serveur');
+    }
+});
+
 
 
 
 
 //*************************************************************Endpoint pour le payement***********************************
-
-// app.post('/simulate-payment', fetchUser, async (req, res) => {
-//     const { eventId, ticketDetails, securityCode, paymentMethod, phoneNumber } = req.body;
-
-//     if (!req.user) {
-//         return res.status(401).json({ message: 'User not authenticated' });
-//     }
-
-//     try {
-//         const event = await Event.findById(eventId ,
-//             { $inc: { reserve: detail.quantity } },
-//             { new: true });
-//         if (!event) {
-//             return res.status(404).json({ message: 'Event not found' });
-//         }
-
-        
-//         const tickets = await Ticket.find({ event: eventId });
-//         if (!tickets.length) {
-//             return res.status(404).json({ message: 'No tickets found for this event' });
-//         }
-
-//         let totalPrice = 0;
-//         for (const detail of ticketDetails) {
-//             const ticket = tickets.find(ticket => ticket._id.toString() === detail.ticketId);
-//             if (ticket) {
-//                 totalPrice += ticket.price * detail.quantity;
-//             } else {
-//                 return res.status(404).json({ message: `Ticket with ID ${detail.ticketId} not found` });
-//             }
-//         }
-
-//         if (req.body.amount !== totalPrice) {
-//             return res.status(400).json({ message: 'Amount does not match the total price for the quantity of tickets' });
-//         }
-
-//         if (securityCode !== '1234') {
-//             return res.status(400).json({ message: 'Invalid security code' });
-//         }
-
-//         const isTMoney = ['90', '91', '92', '93', '70', '71'].some(prefix => phoneNumber.startsWith(prefix));
-//         const isFlooz = ['96', '97', '98', '99', '79'].some(prefix => phoneNumber.startsWith(prefix));
-
-//         if (paymentMethod === 'TMoney' && !isTMoney) {
-//             return res.status(400).json({ message: 'Invalid phone number for TMoney' });
-//         } else if (paymentMethod === 'Flooz' && !isFlooz) {
-//             return res.status(400).json({ message: 'Invalid phone number for Flooz' });
-//         }
-
-//         // Create PDFs for each ticket detail
-//         const pdfPaths = [];
-//         for (const detail of ticketDetails) {
-//             const ticket = tickets.find(ticket => ticket._id.toString() === detail.ticketId);
-//             if (ticket) {
-//                 for (let i = 0; i < detail.quantity; i++) {
-//                     const qrCodeData = `
-//                     ${ticket._id}
-//                     Ticket Number: ${i + 1}
-//                     Event: ${event.name}
-//                     Ticket Type: ${ticket.type}
-//                     Price: ${ticket.price}
-//                     `;
-                    
-//                     const qrCodeBuffer = await generateQRCode(qrCodeData);
-                    
-//                     // Generate a unique PDF for each QR code
-//                     const pdfPath = path.join(__dirname, `ticket-${i + 1}.pdf`);
-//                     await createPDFWithQRCode(qrCodeBuffer, pdfPath);
-                    
-//                     pdfPaths.push(pdfPath);
-//                 }
-//             }
-//         }
-
-//         // Get user email
-//         const user = await User.findById(req.user.id);
-//         if (!user) {
-//             return res.status(404).json({ message: 'User not found' });
-//         }
-
-//         // Send all PDFs by email
-//         await Promise.all(pdfPaths.map(async (pdfPath) => {
-//             await sendQRCodeByEmail(user.email, pdfPath);
-//         }));
-
-//         res.json({ message: 'Payment successful! QR codes have been sent.' });
-//     } catch (error) {
-//         console.error('Error processing payment:', error);
-//         res.status(500).json({ message: 'Internal server error' });
-//     }
-// });
 
 app.post('/simulate-payment', fetchUser, async (req, res) => {
     const { eventId, ticketDetails, securityCode, paymentMethod, phoneNumber } = req.body;
@@ -943,28 +903,7 @@ async function generateQRCode(data) {
         throw error;
     }
 }
-// async function createPDFWithQRCode(qrCodeBuffer, outputPath) {
-//     try {
-//         const doc = new PDFDocument();
-//         doc.pipe(fs.createWriteStream(outputPath));
 
-//         doc.fontSize(12).text(`Merci pour votre achat ; voici votre billet pour l'evenement. faite le scanner pour avoir acces a l'evenement`, {
-//             align: 'center'
-//         });
-
-//         doc.image(qrCodeBuffer, {
-//             fit: [250, 250],
-//             align: 'center',
-//             valign: 'center'
-//         });
-
-//         doc.end();
-//         console.log('PDF created successfully:', outputPath);
-//     } catch (error) {
-//         console.error('Error creating PDF:', error);
-//         throw error;
-//     }
-// }
 async function createPDFWithQRCode(qrCodeBuffer, outputPath) {
     try {
         const doc = new PDFDocument();
@@ -983,10 +922,9 @@ async function createPDFWithQRCode(qrCodeBuffer, outputPath) {
 
         doc.end();
 
-        // Attendre la fin du flux avant de continuer
         await new Promise((resolve, reject) => {
-            stream.on('finish', resolve); // Le flux est terminé
-            stream.on('error', reject); // Une erreur s'est produite
+            stream.on('finish', resolve); 
+            stream.on('error', reject); 
         });
 
         console.log('PDF created successfully:', outputPath);
