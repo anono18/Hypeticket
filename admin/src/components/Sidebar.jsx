@@ -3,9 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import logo from "../assets/logo.png"
 import plus from "../assets/plus.png"
 import liste from "../assets/liste.png"
+import publicImage from "../assets/public.png";
 
 const Sidebar = () => {
-  const navigate = useNavigate(); // Initialisation du hook useNavigate
+  const navigate = useNavigate(); 
 
   const addEvent = () => {
     localStorage.setItem('event', JSON.stringify(null));
@@ -37,13 +38,13 @@ const Sidebar = () => {
                 <img src={plus} alt="" className='w-6 h-6 mr-2' />
                 Ajouter un événement
               </button>
-            </li>
-            {/* <li>
-            <Link to="/EventStatistics" className="flex items-center">
-                <img src={liste} alt="" className='w-6 h-6 mr-2' /> 
-                Statistique
+            </li><br />
+            <li className='mb-4 flex items-center'> 
+            <Link to="/reservations" className="flex items-center text-left">
+                <img src={publicImage} alt="public image" className='w-8 h-8 mr-2' /> 
+                Résèrvations
               </Link>
-            </li> */}
+            </li>
           </ul>
         </nav>
 

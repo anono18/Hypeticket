@@ -236,11 +236,16 @@ const Addevent = () => {
   const [timeEvent, setTimeEvent] = useState('');
   const [eventWebsite, setEventWebsite] = useState('');
   const [storedEvent, setStoredEvent] = useState(null);
+  const [minDate, setMinDate] = useState(''); // Define minDate state
 
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
+    const today = new Date();
+    const formattedDate = today.toISOString().split('T')[0];
+    setMinDate(formattedDate); // Set minDate here
+    
     const eventFromState = location.state?.event;
     if (eventFromState) {
       setStoredEvent(eventFromState);
@@ -282,7 +287,6 @@ const Addevent = () => {
   };
 
   const handleSubmit = async (e) => {
-    
     e.preventDefault();
 
     const formData = new FormData();
@@ -391,6 +395,7 @@ const Addevent = () => {
               placeholder="Date de l'événement"
               value={dateEvent}
               onChange={(e) => setDateEvent(e.target.value)}
+              min={minDate}
               className="border border-gray-300 rounded-lg p-2"
             />
             <input
@@ -438,4 +443,3 @@ const Addevent = () => {
 };
 
 export default Addevent;
-

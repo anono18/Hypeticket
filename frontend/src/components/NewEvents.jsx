@@ -25,7 +25,7 @@ const NewEvents = () => {
                 <div className='shine-border'></div>
                 <div className='text-center mb-12 relative'>
                     <span className='text-3xl font-bold text-white py-1 px-4 rounded-xl shadow-xl'>
-                        Les événements à venir
+                        Les événements tendances
                     </span>
                 </div>
                 <div className='large-container bg-white bg-opacity-50 rounded-xl p-5 relative'>

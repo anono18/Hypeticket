@@ -139,14 +139,64 @@ app.post('/addevent', async (req, res) => {
 
 
 // effacer un evenemnt
+
 app.post('/removeevent', async (req, res) => {
-    await Event.findOneAndDelete({ id: req.body.id });
-    console.log("événement supprimé");
-    res.json({
-        success: true,
-        name: req.body.name
-    });
+    try {
+        // Trouver et supprimer l'événement par son ID
+        const event = await Event.findOneAndDelete({ id: req.body.id });
+
+        // Si l'événement est trouvé et supprimé, supprimer aussi les tickets associés
+        if (event) {
+            await Ticket.deleteMany({ event: event._id });
+            console.log("Événement et ses tickets associés supprimés");
+            res.json({
+                success: true,
+                message: `L'événement '${event.name}' et ses tickets associés ont été supprimés.`
+            });
+        } else {
+            // Si l'événement n'est pas trouvé
+            res.json({
+                success: false,
+                message: "Événement non trouvé"
+            });
+        }
+    } catch (error) {
+        console.error("Erreur lors de la suppression de l'événement:", error);
+        res.status(500).json({
+            success: false,
+            message: "Erreur lors de la suppression de l'événement"
+        });
+    }
 });
+
+app.delete('/events/cleanup', async (req, res) => {
+    try {
+        const currentDate = new Date(); 
+        
+        const eventsToDelete = await Event.find({ date_event: { $lt: currentDate } });
+        
+        if (eventsToDelete.length > 0) {
+            const eventIds = eventsToDelete.map(event => event._id);
+
+            const deleteEventResult = await Event.deleteMany({ _id: { $in: eventIds } });
+            
+            const deleteTicketResult = await Ticket.deleteMany({ eventId: { $in: eventIds } });
+
+            res.status(200).json({ 
+                message: `${deleteEventResult.deletedCount} événements et ${deleteTicketResult.deletedCount} tickets associés supprimés.` 
+            });
+        } else {
+            res.status(200).json({ message: 'Aucun événement à supprimer.' });
+        }
+    } catch (error) {
+        console.error('Erreur lors de la suppression des événements et des tickets associés :', error);
+        res.status(500).json({ message: 'Erreur serveur lors de la suppression des événements et des tickets.' });
+    }
+});
+
+
+
+
 
 // endpoint pour avoir tous les evenements
 app.get("/allevent", async (req, res) => {
@@ -727,8 +777,6 @@ app.post('/reserve', fetchUser, async (req, res) => {
 
 
 
-
-
 //endpoint pour recuperer la reservation d'un user
 app.get('/myreservations', fetchUser, async (req, res) => {
     try {
@@ -752,6 +800,51 @@ app.get('/myreservations', fetchUser, async (req, res) => {
         res.status(500).send({ errors: 'Erreur du serveur. Veuillez réessayer plus tard.' });
     }
 });
+
+
+// liste de tous les reservations
+app.get('/reservations', async (req, res) => {
+    try {
+        const reservations = await Reservation.find()
+            .populate('user', 'firstname name')  // Get user's first and last name
+            .populate({
+                path: 'ticket',
+                populate: {
+                    path: 'event',
+                    select: 'name',  // Select the event name
+                },
+            });
+
+        if (!reservations || reservations.length === 0) {
+            return res.status(404).send({ errors: 'Aucune réservation trouvée' });
+        }
+
+        const formattedReservations = reservations.map(reservation => {
+            // Check if the user exists before accessing firstname and name
+            const userName = reservation.user 
+                ? `${reservation.user.firstname} ${reservation.user.name}` 
+                : 'Utilisateur non disponible';
+
+            // Check if the ticket and event exist before accessing their properties
+            const eventName = reservation.ticket && reservation.ticket.event 
+                ? reservation.ticket.event.name 
+                : 'Événement non disponible';
+
+            return {
+                userName: userName,
+                eventName: eventName,
+                quantity: reservation.quantity,
+            };
+        });
+
+        res.status(200).send({ reservations: formattedReservations });
+    } catch (error) {
+        console.error('Erreur du serveur:', error.message);
+        res.status(500).send('Erreur du serveur');
+    }
+});
+
+
 
 
 
@@ -986,6 +1079,30 @@ app.post('/searchevents', async (req, res) => {
     });
     res.json(events);
 });
+
+
+app.post('/searchevent', async (req, res) => {
+    try {
+        const { searchTerm } = req.body;
+        
+        if (!searchTerm) {
+            return res.status(400).json({ message: 'Le terme de recherche est requis.' });
+        }
+
+        const reservations = await Reservation.find({
+            $or: [
+                { userName: { $regex: searchTerm, $options: 'i' } },
+                { eventName: { $regex: searchTerm, $options: 'i' } }
+            ]
+        });
+
+        res.json(reservations);
+    } catch (error) {
+        console.error('Erreur lors de la recherche des réservations :', error);
+        res.status(500).json({ message: 'Une erreur est survenue lors de la recherche des réservations.' });
+    }
+});
+
 
 
 

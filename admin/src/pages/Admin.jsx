@@ -4,10 +4,11 @@ import Allevent from '../components/Allevent';
 import Addevent from '../components/Addevent';
 import Sidebar from '../components/Sidebar';
 import EventDetails from '../pages/EventDetails';
+import AddTickets from "../components/AddTickets "
 import axios from 'axios';
-import AddTickets from '../components/AddTickets ';
 import logo from "../assets/logo.png"
-import EventStatistics from "../components/EventStatistics "
+// import EventStatistics from "../components/EventStatistics"
+import ReservationTable from '../components/ReservationTable';
 
 const Admin = () => {
   const [events, setEvents] = useState([]);
@@ -55,8 +56,9 @@ const Admin = () => {
         <Routes>
           <Route path="/allevent" element={<Allevent events={events} />} />
           <Route path="/addevent" element={<Addevent />} />
-          <Route path="/EventStatistics" element={<EventStatistics />} />
+          {/* <Route path="/EventStatistics" element={<EventStatistics />} /> */}
           <Route path="/add-tickets/:eventId" element={<AddTickets />} />
+          <Route path="/reservations" element={<ReservationTable />} />
           <Route path="/" element={<div className='flex items-center justify-center min-h-screen bg-gray-100'>
             <h2 className="text-2xl font-bold">
               Bienvenue dans le tableau de bord de l'admin de

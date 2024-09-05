@@ -3,6 +3,46 @@
 @tailwind utilities;
 
 
+.message {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  /* Utilise toute la hauteur de la vue pour centrer le message verticalement */
+  background-color: #f8f9fa;
+  /* Couleur de fond légère */
+  color: #333;
+  /* Couleur du texte */
+  font-size: 1.2rem;
+  /* Taille du texte */
+  text-align: center;
+  /* Centre le texte horizontalement */
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  /* Ombre légère pour le contour */
+}
+
+.message p {
+  margin: 0;
+  /* Enlève les marges par défaut du paragraphe */
+  font-weight: bold;
+  /* Met le texte en gras */
+}
+
+.message a {
+  color: #007bff;
+  /* Couleur du lien */
+  text-decoration: underline;
+  /* Souligne le lien */
+  font-weight: bold;
+  /* Met le lien en gras */
+}
+
+.message a:hover {
+  color: #0056b3;
+  /* Couleur du lien au survol */
+}
 
 
 .overlay {

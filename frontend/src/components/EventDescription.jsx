@@ -448,16 +448,16 @@ const EventDescription = (props) => {
                 </div>
                 <div className='space-y-3'>
                     <div className='bg-gray-100 p-4 rounded-md border border-gray-200'>
-                        <p className='text-sm text-gray-600'>Le {event.date_event} à {event.timeEvent}</p>
+                        <p className='text-sm text-gray-600'>Le {event.date_event}   <br/> à {event.timeEvent}</p>
                     </div>
                     <div className='bg-gray-100 p-4 rounded-md border border-gray-200'>
-                        <p className='text-sm text-gray-600'>{event.lieu}</p>
+                        <p className='text-sm text-gray-600'>Lieu: {event.lieu}</p>
                     </div>
                     <div className='bg-gray-100 p-4 rounded-md border border-gray-200'>
-                        <p className='text-sm text-gray-600'>{event.organizer}</p>
+                        <p className='text-sm text-gray-600'>Organisateur: {event.organizer}</p>
                     </div>
                     <div className='bg-gray-100 p-4 rounded-md border border-gray-200'>
-                        <p className='text-sm text-gray-600'>{event.supportContact}</p>
+                        <p className='text-sm text-gray-600'>Contact: {event.supportContact}</p>
                     </div>
                 </div>
             </div>
@@ -547,6 +547,7 @@ const EventDescription = (props) => {
                         {step === 2 && (
                             <>
                                 <p className='text-sm text-gray-700 mb-4'>Entrez le montant:</p>
+                                <p className='text-xl font-semibold text-center'>Total a payer: {totalPrice} FCFA</p>
                                 <input
                                     type="number"
                                     value={amount}
@@ -597,9 +598,9 @@ const EventDescription = (props) => {
             )}
             {showConfirmation && (
                 <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
-                    <div className='bg-white p-6 rounded-lg shadow-lg max-w-md w-full'>
+                    <div className='bg-white p-8 rounded-lg shadow-lg max-w-md w-full'>
                         <h3 className='text-lg font-semibold mb-4'>Confirmation</h3>
-                        <p>Votre paiement a été effectué avec succès ! Vous recevrez un QR code par e-mail.</p>
+                        <p>Votre paiement a été effectué avec succès ! Vous recevrez votre billet par e-mail.</p>
                         <div className='flex justify-end gap-2 mt-4'>
                             <button
                                 className='bg-green-500 text-white px-4 py-2 rounded'
