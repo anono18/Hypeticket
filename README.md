@@ -25,12 +25,11 @@ mongoose.connect("mongodb+srv://adododjialban:arnold_18@cluster2.hnhpju9.mongodb
     npm install nodemailer
 
 
-2 Démarrez le serveur backend :
-
+2 Accédez au répertoire admin et lancez l'interface backend
+    cd backend
     node index.js
 
 3 Accédez au répertoire frontend et lancez l'interface client :
-
     cd frontend
     npm run dev
 
@@ -39,8 +38,8 @@ mongoose.connect("mongodb+srv://adododjialban:arnold_18@cluster2.hnhpju9.mongodb
     cd admin
     npm run dev
 
+information sur les different endpoint du backend: 
 Gestion des images
-
     POST /upload : Télécharge une image et renvoie son URL.
 
 Gestion des événements
