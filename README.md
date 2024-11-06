@@ -25,7 +25,7 @@ mongoose.connect("mongodb+srv://adododjialban:arnold_18@cluster2.hnhpju9.mongodb
     npm install nodemailer
 
 
-2 Accédez au répertoire admin et lancez l'interface backend
+2 Accédez au répertoire backend et lancez le serveur :
     cd backend
     node index.js
 
